@@ -1,0 +1,73 @@
+FROM a76yyyy/pycurl:latest
+
+LABEL maintainer="ymting"
+LABEL org.opencontainers.image.source="https://github.com/ymting/qd"
+LABEL org.opencontainers.image.description="QD with opt-in curl_cffi browser impersonation transport"
+
+ARG CURL_CFFI_VERSION=0.15.0
+
+WORKDIR /usr/src/app
+
+# 先安装依赖以复用构建缓存；应用源码在依赖层之后复制。
+COPY requirements.txt /tmp/requirements.txt
+
+RUN set -eux; \
+    sed -i 's/mirrors.ustc.edu.cn/dl-cdn.alpinelinux.org/g' /etc/apk/repositories; \
+    sed -i 's/edge/v3.19/g' /etc/apk/repositories; \
+    sed -i '/testing/d' /etc/apk/repositories; \
+    apk update; \
+    apk add --update --no-cache \
+        python3 py3-six py3-markupsafe py3-pycryptodome py3-tornado \
+        py3-wrapt py3-packaging py3-greenlet py3-urllib3 py3-cryptography \
+        py3-aiosignal py3-async-timeout py3-attrs py3-frozenlist \
+        py3-multidict py3-charset-normalizer py3-aiohttp \
+        py3-typing-extensions py3-yarl py3-cffi \
+        py3-numpy-dev py3-opencv py3-pillow; \
+    apk add --no-cache --virtual .build_deps \
+        cmake make perl autoconf g++ automake py3-pip py3-setuptools \
+        py3-wheel python3-dev linux-headers libtool util-linux; \
+    sed -i '/ddddocr/d' /tmp/requirements.txt; \
+    sed -i '/packaging/d' /tmp/requirements.txt; \
+    sed -i '/wrapt/d' /tmp/requirements.txt; \
+    sed -i '/pycryptodome/d' /tmp/requirements.txt; \
+    sed -i '/tornado/d' /tmp/requirements.txt; \
+    sed -i '/MarkupSafe/d' /tmp/requirements.txt; \
+    sed -i '/pillow/d' /tmp/requirements.txt; \
+    sed -i '/opencv/d' /tmp/requirements.txt; \
+    sed -i '/numpy/d' /tmp/requirements.txt; \
+    sed -i '/greenlet/d' /tmp/requirements.txt; \
+    sed -i '/urllib3/d' /tmp/requirements.txt; \
+    sed -i '/cryptography/d' /tmp/requirements.txt; \
+    sed -i '/aiosignal/d' /tmp/requirements.txt; \
+    sed -i '/async-timeout/d' /tmp/requirements.txt; \
+    sed -i '/attrs/d' /tmp/requirements.txt; \
+    sed -i '/frozenlist/d' /tmp/requirements.txt; \
+    sed -i '/multidict/d' /tmp/requirements.txt; \
+    sed -i '/charset-normalizer/d' /tmp/requirements.txt; \
+    sed -i '/aiohttp/d' /tmp/requirements.txt; \
+    sed -i '/typing-extensions/d' /tmp/requirements.txt; \
+    sed -i '/yarl/d' /tmp/requirements.txt; \
+    sed -i '/^cffi==/d' /tmp/requirements.txt; \
+    python3 -m pip install --no-cache-dir -r /tmp/requirements.txt --break-system-packages; \
+    python3 -m pip install \
+        --no-cache-dir \
+        --only-binary=:all: \
+        --index-url https://pypi.org/simple \
+        --break-system-packages \
+        "curl-cffi==${CURL_CFFI_VERSION}"; \
+    apk del .build_deps; \
+    sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories; \
+    rm -rf /tmp/requirements.txt /var/cache/apk/* /root/.cache /usr/share/man/*
+
+# 仅复制 Actions 检出的本仓库，不再从上游仓库克隆或覆盖源码。
+COPY . /usr/src/app
+
+RUN chmod +x /usr/src/app/update.sh
+
+ENV PORT=80
+ENV TZ=CST-8
+
+EXPOSE 80/tcp
+VOLUME ["/usr/src/app/config"]
+
+CMD ["python3", "/usr/src/app/run.py"]

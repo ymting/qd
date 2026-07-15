@@ -8,6 +8,7 @@ on:
 
 jobs:
   sync:
+    if: github.repository == 'qd-today/qd'
     runs-on: ubuntu-latest
     steps:
     - uses: dropseed/changerelease@v1

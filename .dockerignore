@@ -1,0 +1,36 @@
+.git
+.github
+.idea
+.vscode
+
+# 构建镜像不需要文档、开发配置和上游部署密钥。
+docs
+ssh
+.all-contributorsrc
+.dcignore
+.flake8
+.gitignore
+mypy.ini
+*.md
+*.png
+
+# 本地运行数据和 Python 缓存不得进入镜像。
+__pycache__
+**/__pycache__
+*.py[cod]
+*.db
+*.db-journal
+config/*.json
+local_config.py
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# 常见本地虚拟环境和临时目录。
+.venv
+venv
+env
+tmp
+redis
+node_modules

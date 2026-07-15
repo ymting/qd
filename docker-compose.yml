@@ -2,9 +2,7 @@ version: "3"
 
 services:
   qd:
-    image: qdtoday/qd:latest
-    # image: qdtoday/qd:lite-latest # 精简版
-    # image: qdtoday/qd:dev # 开发版
+    image: ${QD_IMAGE:-ghcr.io/ymting/qd:20260715.1}
     container_name: qd
     depends_on:
       - redis
