@@ -1,137 +1,104 @@
-<p align="center">
-   <a href="https://github.com/qd-today/qd">
-   <img style="border-radius:50%" width="150" src="https://fastly.jsdelivr.net/gh/qd-today/qd@master/web/static/img/icon.png">
-   </a>
-</p>
+# QD for Python3
 
-<h1 align="center">QD for Python3</h1>
+这是一个基于 [qd-today/qd](https://github.com/qd-today/qd) 的兼容增强 Fork。项目继续使用 QD 的 HAR 编辑、变量、断言、日志和定时任务能力，并为需要现代浏览器 TLS 指纹的站点增加按请求启用的传输方式。
 
-<div align="center">
-QD —— 一个<b>HTTP请求定时任务自动执行框架</b> base on HAR Editor and Tornado Server
+上游项目的原 README 已完整保存在 [Markdown 归档](docs/archive/upstream-readme-20260715.md) 和 [HTML 阅读版](docs/archive/upstream-readme-20260715.html)。原作者、贡献者及许可证归属不变。
 
-[![HomePage][HomePage-image]][HomePage-url]
-[![Github][Github-image]][Github-url]
-[![Gitee][Gitee-image]][Gitee-url]
-[![license][github-license-image]][github-license-url]
-[![QQ频道][QQPD-image]][QQPD-url]
-[![Build Image][workflow-image]][workflow-url]
-[![last commit][last-commit-image]][last-commit-url]
-[![commit activity][commit-activity-image]][commit-activity-url]
-![repo size][repo-size-image]
-[![docker version][docker-version-image]][docker-version-url]
-[![docker pulls][docker-pulls-image]][docker-pulls-url]
-[![docker stars][docker-stars-image]][docker-stars-url]
-[![docker image size][docker-image-size-image]][docker-image-size-url]
-![python version][python-version-image]
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-24-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+## 本 Fork 的增强
 
-[HomePage-image]: https://img.shields.io/badge/HomePage-QD--Today-brightgreen
-[HomePage-url]: https://qd.a76yyyy.cn
-[Github-image]: https://img.shields.io/static/v1?label=Github&message=QD&color=brightgreen
-[Github-url]: https://github.com/qd-today/qd/
-[Gitee-image]: https://img.shields.io/static/v1?label=Gitee&message=QD&color=brightgreen
-[Gitee-url]: https://gitee.com/qd-today/qd/
-[github-license-image]: https://img.shields.io/github/license/qd-today/qd
-[github-license-url]: https://github.com/qd-today/qd/blob/master/LICENSE
-[QQPD-image]: https://img.shields.io/static/v1?label=QQ%E9%A2%91%E9%81%93&message=QD&color=brightgreen
-[QQPD-url]: https://pd.qq.com/s/g9qaiue25
-[workflow-image]: https://github.com/qd-today/qd/actions/workflows/Publish%20Package.yml/badge.svg
-[workflow-url]: https://github.com/qd-today/qd/actions/workflows/Publish%20Package.yml
-[last-commit-image]: https://img.shields.io/github/last-commit/qd-today/qd
-[last-commit-url]: https://github.com/qd-today/qd/
-[commit-activity-image]: https://img.shields.io/github/commit-activity/m/qd-today/qd
-[commit-activity-url]: https://github.com/qd-today/qd/
-[repo-size-image]: https://img.shields.io/github/repo-size/qd-today/qd
-[docker-version-image]: https://img.shields.io/docker/v/qdtoday/qd/latest?style=flat
-[docker-version-url]: https://hub.docker.com/r/qdtoday/qd/tags?latest
-[docker-pulls-image]: https://img.shields.io/docker/pulls/qdtoday/qd?style=flat
-[docker-pulls-url]: https://hub.docker.com/r/qdtoday/qd
-[docker-stars-image]: https://img.shields.io/docker/stars/qdtoday/qd?style=flat
-[docker-stars-url]: https://hub.docker.com/r/qdtoday/qd
-[docker-image-size-image]: https://img.shields.io/docker/image-size/qdtoday/qd/latest?style=flat&arch=amd64
-[docker-image-size-url]: https://hub.docker.com/r/qdtoday/qd
-[python-version-image]: https://img.shields.io/github/pipenv/locked/python-version/qd-today/qd
+- HAR 请求可通过内部头 `X-QD-Impersonate: chrome110` 选择 `curl_cffi` 浏览器指纹传输。
+- 未设置内部头的请求继续使用 QD 原有 Tornado/PyCurl 链路，现有模板行为不变。
+- 内部头只负责 QD 请求路由，发送到目标网站前会被删除。
+- 提供适配 NodeSeek 当前 Cloudflare/TLS 环境的 Cookie 签到 HAR。
+- GitHub Actions 仅构建 `linux/amd64` 镜像并发布到 GitHub Container Registry。
 
-</div>
+详细设计见 [NodeSeek HAR 浏览器指纹传输设计](docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md)。
 
-<p align="center">
-   <img width="45%" style="border:solid 1px #DCEBFB" src="https://fastly.jsdelivr.net/gh/qd-today/qd@master/web/docs/public/login.png" >
-   <img width="45%" style="border:solid 1px #DCEBFB" src="https://fastly.jsdelivr.net/gh/qd-today/qd@master/web/docs/public/index.png">
-</p>
+## 快速部署
 
-操作说明
-==========
+固定版本部署：
 
-请参阅 **[使用指南](https://qd-today.github.io/qd/zh_CN/)**
+```bash
+docker pull ghcr.io/ymting/qd:20260715.1
+docker run -d \
+  --name qd \
+  --restart unless-stopped \
+  -p 8923:80 \
+  -v "$PWD/config:/usr/src/app/config" \
+  ghcr.io/ymting/qd:20260715.1
+```
 
-更新日志
-===========
+需要自动跟随最新正式版本时，将镜像改为：
 
-详见 **[CHANGELOG.md](./CHANGELOG.md)**
+```text
+ghcr.io/ymting/qd:latest
+```
 
-维护项目精力有限, 仅保证对 Chrome 浏览器的支持。如果测试了其他浏览器可以 Pull Request。
+浏览器访问 `http://服务器地址:8923`。生产部署前请按 QD 原有配置方式设置安全的 `COOKIE_SECRET`、`AES_KEY` 和数据库参数，不要沿用公开示例密钥。
 
-许可
-===========
+当前 Fork 镜像只支持 64 位 x86，即 Docker 平台 `linux/amd64`。
 
-[MIT](https://fastly.jsdelivr.net/gh/qd-today/qd@master/LICENSE) 许可协议
+仓库自带的 Compose 配置默认使用固定版本 `20260715.1`：
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fqd-today%2Fqd.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fqd-today%2Fqd?ref=badge_large)
+```bash
+docker compose up -d
+```
 
-致谢
-===========
+需要切换到 `latest` 或指定回滚版本时，可覆盖镜像变量：
 
-## Contributors ✨
+```bash
+QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
+```
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+## 镜像标签
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="12.5%"><a href="http://www.a76yyyy.cn"><img src="https://avatars.githubusercontent.com/u/56478790?v=4?s=100" width="100px;" alt="a76yyyy"/><br /><sub><b>a76yyyy</b></sub></a><br /><a href="#design-a76yyyy" title="Design">🎨</a> <a href="https://github.com/qd-today/qd/commits?author=a76yyyy" title="Code">💻</a> <a href="#maintenance-a76yyyy" title="Maintenance">🚧</a> <a href="https://github.com/qd-today/qd/commits?author=a76yyyy" title="Documentation">📖</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="http://binux.me/"><img src="https://avatars.githubusercontent.com/u/646451?v=4?s=100" width="100px;" alt="Roy Binux"/><br /><sub><b>Roy Binux</b></sub></a><br /><a href="#design-Binux" title="Design">🎨</a> <a href="https://github.com/qd-today/qd/commits?author=Binux" title="Code">💻</a> <a href="#maintenance-Binux" title="Maintenance">🚧</a> <a href="https://github.com/qd-today/qd/commits?author=Binux" title="Documentation">📖</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/AragonSnow"><img src="https://avatars.githubusercontent.com/u/22835918?v=4?s=100" width="100px;" alt="AragonSnow"/><br /><sub><b>AragonSnow</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=AragonSnow" title="Code">💻</a> <a href="#design-AragonSnow" title="Design">🎨</a> <a href="#maintenance-AragonSnow" title="Maintenance">🚧</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://www.quchao.net"><img src="https://avatars.githubusercontent.com/u/36469805?v=4?s=100" width="100px;" alt="Mark"/><br /><sub><b>Mark</b></sub></a><br /><a href="#design-Mark-1215" title="Design">🎨</a> <a href="#blog-Mark-1215" title="Blogposts">📝</a> <a href="https://github.com/qd-today/qd/commits?author=Mark-1215" title="Documentation">📖</a> <a href="#maintenance-Mark-1215" title="Maintenance">🚧</a> <a href="https://github.com/qd-today/qd/commits?author=Mark-1215" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/cdpidan"><img src="https://avatars.githubusercontent.com/u/8141453?v=4?s=100" width="100px;" alt="pidan"/><br /><sub><b>pidan</b></sub></a><br /><a href="#design-cdpidan" title="Design">🎨</a> <a href="https://github.com/qd-today/qd/commits?author=cdpidan" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://buzhibujue.cf"><img src="https://avatars.githubusercontent.com/u/24644841?v=4?s=100" width="100px;" alt="buzhibujue"/><br /><sub><b>buzhibujue</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=buzhibujuelb" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/billypon"><img src="https://avatars.githubusercontent.com/u/1763302?v=4?s=100" width="100px;" alt="billypon"/><br /><sub><b>billypon</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=billypon" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="http://www.lingyan8.com"><img src="https://avatars.githubusercontent.com/u/19186382?v=4?s=100" width="100px;" alt="acooler15"/><br /><sub><b>acooler15</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=acooler15" title="Code">💻</a> <a href="#maintenance-acooler15" title="Maintenance">🚧</a></td>
-    </tr>
-    <tr>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/aa889788"><img src="https://avatars.githubusercontent.com/u/16019986?v=4?s=100" width="100px;" alt="shxyke"/><br /><sub><b>shxyke</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=aa889788" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/gxitm"><img src="https://avatars.githubusercontent.com/u/2405087?v=4?s=100" width="100px;" alt="xiaoxiao"/><br /><sub><b>xiaoxiao</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=gxitm" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://blog.hicasper.com"><img src="https://avatars.githubusercontent.com/u/25276620?v=4?s=100" width="100px;" alt="Casper"/><br /><sub><b>Casper</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=caspershw" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/ckx000"><img src="https://avatars.githubusercontent.com/u/5800591?v=4?s=100" width="100px;" alt="旋子"/><br /><sub><b>旋子</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=ckx000" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/chen8945"><img src="https://avatars.githubusercontent.com/u/44148812?v=4?s=100" width="100px;" alt="chen8945"/><br /><sub><b>chen8945</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=chen8945" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/seiuneko"><img src="https://avatars.githubusercontent.com/u/25706824?v=4?s=100" width="100px;" alt="seiuneko"/><br /><sub><b>seiuneko</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=seiuneko" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/powersee"><img src="https://avatars.githubusercontent.com/u/38074760?v=4?s=100" width="100px;" alt="powersee"/><br /><sub><b>powersee</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=powersee" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/Cirn09"><img src="https://avatars.githubusercontent.com/u/25722111?v=4?s=100" width="100px;" alt="Cirn09"/><br /><sub><b>Cirn09</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=Cirn09" title="Code">💻</a></td>
-    </tr>
-    <tr>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/Ovler-Young"><img src="https://avatars.githubusercontent.com/u/44089074?v=4?s=100" width="100px;" alt="Ovler"/><br /><sub><b>Ovler</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=Ovler-Young" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://www.lshell.com"><img src="https://avatars.githubusercontent.com/u/676412?v=4?s=100" width="100px;" alt="An"/><br /><sub><b>An</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=Ansen" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/Siman8"><img src="https://avatars.githubusercontent.com/u/32073730?v=4?s=100" width="100px;" alt="Siman8"/><br /><sub><b>Siman8</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=Siman8" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/uiolee"><img src="https://avatars.githubusercontent.com/u/22849383?v=4?s=100" width="100px;" alt="Uiolee"/><br /><sub><b>Uiolee</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=uiolee" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/OwnerCM"><img src="https://avatars.githubusercontent.com/u/22722811?v=4?s=100" width="100px;" alt="OwnerCM"/><br /><sub><b>OwnerCM</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=OwnerCM" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/jionkitten"><img src="https://avatars.githubusercontent.com/u/30788097?v=4?s=100" width="100px;" alt="jionkitten"/><br /><sub><b>jionkitten</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=jionkitten" title="Code">💻</a></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/Patrick-Ze"><img src="https://avatars.githubusercontent.com/u/19711799?v=4?s=100" width="100px;" alt="Patrick-Ze"/><br /><sub><b>Patrick-Ze</b></sub></a><br /><a href="https://github.com/qd-today/qd/commits?author=Patrick-Ze" title="Code">💻</a></td>
-    </tr>
-  </tbody>
-</table>
+| 标签 | 用途 |
+| --- | --- |
+| `ghcr.io/ymting/qd:20260715.1` | 本次正式发布版本，推荐生产环境固定使用 |
+| `ghcr.io/ymting/qd:latest` | 最新正式版本，发布新版本时更新 |
+| `ghcr.io/ymting/qd:sha-<提交短哈希>` | 精确对应源码提交，便于定位和回滚 |
 
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
+三个标签由同一次构建生成并引用同一镜像，不会重复构建镜像层。
 
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+## NodeSeek 签到
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+模板：[NodeSeek-可选签到模式.har](templates/NodeSeek-可选签到模式.har)
 
-Stargazers over time
-===========
+1. 在浏览器中登录 NodeSeek，并完成人机验证。
+2. 将 HAR 导入 QD，新建对应任务。
+3. 将任务变量 `cookie` 设置为浏览器中复制的完整 Cookie。
+4. 设置任务变量 `sign_mode_填random随机_填fixed固定5`；只填写下表中的小写英文值。
+5. 手动执行一次任务，确认 Cookie、网络出口和签到结果正常后再启用定时运行。
 
-[![Stargazers over time](https://starchart.cc/qd-today/qd.svg)](https://starchart.cc/qd-today/qd)
+| 配置值 | 签到方式 |
+| --- | --- |
+| `fixed` | 固定获得 5 积分，也是留空时的默认模式 |
+| `random` | 使用随机积分模式 |
+
+不要填写布尔值 `true` 或 `false`。模板会自行把 `fixed` 和 `random` 转换为 NodeSeek 接口需要的参数。
+
+模板中的 `X-QD-Impersonate: chrome110` 是本 Fork 使用的内部路由标记，已经配置完成，用户无需修改。重复签到返回 HTTP 500 和“今天已完成签到”时，模板会将其识别为正常完成。
+
+## Cookie 与验证边界
+
+- 本项目不会使用账号密码登录 NodeSeek，也不会绕过 Cloudflare 人机验证。
+- Cookie、`pjwt`、`cf_clearance` 等内容仅应保存为 QD 的私有任务变量。
+- 不要把真实 Cookie 写入 HAR、README、Issue、Actions 日志或其他 Git 文件。
+- Cookie 失效或 Cloudflare 要求重新验证时，需要在浏览器重新登录并更新任务变量。
+- 浏览器指纹传输只能解决客户端 TLS 兼容问题，不能保证任意数据中心 IP 都能通过站点风控。
+
+## 文档
+
+- [上游 README 归档](docs/archive/upstream-readme-20260715.md)
+- [项目 README HTML 阅读版](docs/README.html)
+- [浏览器指纹传输设计](docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md)
+- [更新日志](CHANGELOG.md)
+- [MIT 许可证](LICENSE)
+
+升级前请查看 [CHANGELOG.md](CHANGELOG.md)。出现回归时，可将镜像从 `latest` 固定到版本标签或对应的 `sha-<提交短哈希>`。
+
+## 致谢与许可
+
+感谢 [qd-today/qd](https://github.com/qd-today/qd)、其原作者和所有贡献者。本 Fork 仅维护上述兼容增强；QD 的完整原始介绍和贡献者名单保存在[上游 README 归档](docs/archive/upstream-readme-20260715.md)。
+
+本项目继续遵循 [MIT License](LICENSE)。

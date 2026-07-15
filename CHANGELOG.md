@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Nothing right now.
 
+## [20260715.1] - 2026.07.15 更新
+
+### Features
+
+1. 为 HAR 请求增加按需启用的 Chrome 110 浏览器 TLS 指纹传输，保留原有 QD 请求链路作为默认行为。
+2. 新增 NodeSeek 可选签到模式模板，支持固定 5 积分和随机积分。
+3. 新增 `linux/amd64` GHCR 镜像发布流程，同一次构建生成版本号、`latest` 和提交哈希标签。
+
+### Changed
+
+1. Docker 镜像直接使用 `ymting/qd` 的检出代码，不再在构建阶段克隆上游仓库或包含 SSH 文件。
+2. 重写 Fork 项目 README，并归档原上游 README 以保留完整来源和贡献者信息。
+
+### Fixed
+
+1. 修复 NodeSeek 在现有 PyCurl/JA3 请求链路中出现 Cloudflare 403 或 `quictls SSL_ERROR_SYSCALL`，导致 HAR 无法执行的问题。
+
 ## [20250803] - 2025.08.03 更新
 
 ### Features
