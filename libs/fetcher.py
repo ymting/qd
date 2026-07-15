@@ -24,6 +24,7 @@ from tornado.httputil import HTTPHeaders
 
 import config
 from libs import cookie_utils, utils
+from libs.curl_cffi_client import CurlCffiClient, IMPERSONATE_HEADER
 from libs.log import Log
 from libs.parse_url import parse_url
 from libs.safe_eval import safe_eval
@@ -52,6 +53,7 @@ class Fetcher(object):
                 "tornado.curl_httpclient.CurlAsyncHTTPClient"
             )
         self.client = httpclient.AsyncHTTPClient()
+        self.curl_cffi_client = CurlCffiClient()
         self.download_size_limit = download_size_limit
         self.jinja_env = Environment()
         self.jinja_env.globals = utils.jinja_globals
@@ -117,7 +119,14 @@ class Fetcher(object):
         if str(url).startswith("api://"):
             url = str(url).replace("api:/", local_host, 1)
 
-        headers = dict((e["name"], e["value"]) for e in request["headers"])
+        impersonate = None
+        headers = {}
+        for header in request["headers"]:
+            if header["name"].lower() == IMPERSONATE_HEADER.lower():
+                # 内部控制头仅用于选择传输方式，禁止发送到目标站点。
+                impersonate = header["value"].strip()
+            else:
+                headers[header["name"]] = header["value"]
         cookies = dict((e["name"], e["value"]) for e in request["cookies"])
         data = request.get("data")
         if method == "GET":
@@ -182,6 +191,7 @@ class Fetcher(object):
             connect_timeout=connect_timeout,
             request_timeout=request_timeout,
         )
+        setattr(req, "_qd_impersonate", impersonate)
 
         session = cookie_utils.CookieSession()
         if req.headers.get("cookie"):
@@ -222,6 +232,19 @@ class Fetcher(object):
         env["session"] = session
 
         return req, rule, env
+
+    @staticmethod
+    def _get_curl_cffi_proxy(url, proxy):
+        """按现有直连规则决定 curl_cffi 是否使用任务代理。"""
+        if not proxy:
+            return None
+        if not config.proxy_direct_mode:
+            return proxy
+        if config.proxy_direct_mode == "regexp":
+            return None if re.compile(config.proxy_direct).search(url) else proxy
+        if config.proxy_direct_mode == "url":
+            return None if utils.urlmatch(url) in config.proxy_direct.split("|") else proxy
+        return None
 
     @staticmethod
     def response2har(response):
@@ -550,6 +573,7 @@ class Fetcher(object):
     ):
         if proxy is None:
             proxy = {}
+        use_curl_cffi = False
         try:
             req, rule, env = self.build_request(
                 obj,
@@ -558,7 +582,17 @@ class Fetcher(object):
                 curl_encoding=curl_encoding,
                 curl_content_length=curl_content_length,
             )
-            response = await self.client.fetch(req)
+            impersonate = getattr(req, "_qd_impersonate", None)
+            use_curl_cffi = impersonate is not None
+            if use_curl_cffi:
+                response = await self.curl_cffi_client.fetch(
+                    req,
+                    impersonate=impersonate,
+                    proxy=self._get_curl_cffi_proxy(req.url, proxy),
+                    download_size_limit=self.download_size_limit,
+                )
+            else:
+                response = await self.client.fetch(req)
             logger_fetcher.debug(
                 "%d %s %s %.2fms",
                 response.code,
@@ -568,7 +602,8 @@ class Fetcher(object):
             )
         except httpclient.HTTPError as e:
             try:
-                if config.allow_retry and pycurl:
+                # 指纹请求失败时不能退回普通 TLS，否则会再次触发站点防护。
+                if config.allow_retry and pycurl and not use_curl_cffi:
                     if e.__dict__.get("errno", "") == 61:
                         logger_fetcher.warning(
                             "%s %s [Warning] %s -> Try to retry!",
