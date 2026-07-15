@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>NodeSeek HAR 浏览器指纹传输设计</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="C:\Users\tingyu\.codex\skills\huashu-md-html\templates\report\theme.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">NodeSeek HAR 浏览器指纹传输设计</h1>
+</header>
+<h2 id="ïîä³¾">ÏîÄ¿±³¾°</h2>
+<p>NodeSeek µÄÇ©µ½ÈÔÊÊºÏÓÃ QD HAR Ä£°å±í´ï£ºÄ£°å¸ºÔð Cookie
+±äÁ¿¡¢¹Ì¶¨»òËæ»úÇ©µ½Ä£Ê½¡¢ÇëÇó¶ÏÑÔºÍÈÕÖ¾ÌáÈ¡¡£µ±Ç°Ê§°Üµã²»ÔÚ HAR£¬¶øÔÚ
+QD µÄµ×²ãÇëÇó´«Êä¡£ÆÕÍ¨ PyCurl ÇëÇó±» Cloudflare ¾Ü¾ø£¬ÏÖÓÐ JA3 ¾µÏñÓÖÔÚ
+TLS ÎÕÊÖ½×¶Î·µ»Ø
+<code>HTTP 599 quictls SSL_connect: SSL_ERROR_SYSCALL</code>¡£</p>
+<p>Êµ²â <code>curl_cffi</code> Ê¹ÓÃ Chrome 110 Ö¸ÎÆºÍÆ¥ÅäµÄä¯ÀÀÆ÷
+User-Agent ¿ÉÒÔ·ÃÎÊ NodeSeek¡£Òò´Ë±¾Éè¼ÆÎª QD
+Ôö¼Ó°´ÇëÇóÆôÓÃµÄä¯ÀÀÆ÷Ö¸ÎÆ´«Êä£¬Í¬Ê±±£ÁôÔ­ÓÐ HAR Ö´ÐÐÁ÷³Ì¡£</p>
+<h2 id="äê">Ä¿±ê</h2>
+<ol type="1">
+<li>NodeSeek ¼ÌÐøÊ¹ÓÃ±ê×¼ HAR Ä£°å£¬²»ÒýÈë¶ÀÁ¢Ç©µ½·þÎñ¡£</li>
+<li>Ö»ÓÐÃ÷È·±ê¼ÇµÄÇëÇóÊ¹ÓÃ
+<code>curl_cffi</code>£¬ÆäËûÄ£°åÐÐÎª±£³Ö²»±ä¡£</li>
+<li><code>curl_cffi</code> ÏìÓ¦¼ÌÐø½øÈë QD Ô­ÓÐµÄ
+Cookie¡¢±äÁ¿¡¢¶ÏÑÔºÍÈÕÖ¾´¦ÀíÁ´Â·¡£</li>
+<li>GitHub Actions Îª <code>linux/amd64</code> ¹¹½¨²¢·¢²¼ GHCR
+¾µÏñ¡£</li>
+<li>Ê×´Î·¢²¼°æ±¾Îª
+<code>20260715.1</code>£¬Í¬Ò»¾µÏñÍ¬Ê±´ø°æ±¾¡¢<code>latest</code>
+ºÍÌá½»¹þÏ£±êÇ©¡£</li>
+<li>ÕæÊµ Cookie¡¢<code>pjwt</code>¡¢<code>cf_clearance</code>
+µÈÈÏÖ¤ÐÅÏ¢²»½øÈë´úÂë¡¢Ä£°å¡¢ÈÕÖ¾¡¢²âÊÔ»ò Release¡£</li>
+</ol>
+<h2 id="çäê">·ÇÄ¿±ê</h2>
+<ul>
+<li>²»Ìæ»» QD µÄÈ«¾Ö HTTP ¿Í»§¶Ë¡£</li>
+<li>²»ÊµÏÖ NodeSeek ÕËºÅÃÜÂëµÇÂ¼»ò Cloudflare ÈË»úÑéÖ¤¡£</li>
+<li>²»³ÐÅµ 32 Î» x86¡¢32 Î» ARM »òÆäËûÎ´Ìá¹© <code>curl_cffi</code>
+Ô¤±àÒë°üµÄÆ½Ì¨¡£</li>
+<li>²»ÐÞ¸ÄÆäËûÕ¾µã HAR µÄÄ¬ÈÏÐÐÎª¡£</li>
+</ul>
+<h2 id="è½ï">·½°¸±È½Ï</h2>
+<h3 id="aºhar-çëçóñôñêä²éóã">·½°¸ A£ºHAR °´ÇëÇóÑ¡Ôñ´«Êä£¨²ÉÓÃ£©</h3>
+<p>HAR ÇëÇóÔö¼Ó QD ÄÚ²¿ÇëÇóÍ·
+<code>X-QD-Impersonate: chrome110</code>¡£QD
+½âÎöºóÉ¾³ý¸ÃÇëÇóÍ·£¬²¢°ÑÇëÇó½»¸ø
+<code>curl_cffi</code>¡£¸Ã·½Ê½¸Ä¶¯·¶Î§ÓÐÏÞ£¬NodeSeek ¿ÉÒÔ»ñµÃä¯ÀÀÆ÷ TLS
+Ö¸ÎÆ£¬ÆäËûÄ£°åÈÔÊ¹ÓÃÔ­´«Êä¡£</p>
+<h3 id="bºè¾öìæîª-curl_cffi">·½°¸ B£ºÈ«¾ÖÌæ»»Îª
+<code>curl_cffi</code></h3>
+<p>ÊµÏÖÈë¿Ú¸üÉÙ£¬µ«»á¸Ä±äËùÓÐÄ£°åµÄÖØ¶¨Ïò¡¢´úÀí¡¢Cookie
+ºÍÒì³£ÐÐÎª£¬»Ø¹é·çÏÕ¹ý´ó¡£</p>
+<h3 id="cºàá-nodeseek-½å¾òþîñ">·½°¸ C£º¶ÀÁ¢ NodeSeek ½Å±¾»ò·þÎñ</h3>
+<p>¿ÉÒÔÈÆ¹ý QD ÇëÇó²ã£¬µ«»áÍÑÀë HAR
+µÄ±äÁ¿¡¢ÈÕÖ¾ºÍÈÎÎñ¹ÜÀí£¬²»·ûºÏ±¾ÏîÄ¿Ä¿±ê¡£</p>
+<h2 id="ü¹¹éè¼æ">¼Ü¹¹Éè¼Æ</h2>
+<h3 id="çëçóâóé">ÇëÇóÂ·ÓÉ</h3>
+<p><code>Fetcher.build_request()</code> ¼ÌÐø¹¹Ôì Tornado
+<code>HTTPRequest</code>¡£ÇëÇóÖ´ÐÐÇ°¼ì²éÄÚ²¿Í·
+<code>X-QD-Impersonate</code>£º</p>
+<ul>
+<li>Î´ÉèÖÃ£ºÑØÓÃ <code>AsyncHTTPClient.fetch()</code>¡£</li>
+<li>ÖµÎª <code>chrome110</code>£ºÉ¾³ýÄÚ²¿Í·£¬µ÷ÓÃÐÂµÄ
+<code>curl_cffi</code> ÊÊÅäÆ÷¡£</li>
+<li>Öµ²»ÊÜÖ§³Ö£º·µ»ØÃ÷È·µÄÅäÖÃ´íÎó£¬²»»ØÍËµ½ÆÕÍ¨´«Êä¡£</li>
+</ul>
+<p>ÄÚ²¿Í·Ö»ÓÃÓÚ QD
+Â·ÓÉ£¬²»·¢ËÍµ½Ä¿±êÍøÕ¾£¬Ò²²»×÷ÎªÏìÓ¦ÈÕÖ¾ÖÐµÄÕ¾µãÇëÇóÍ·Õ¹Ê¾¡£</p>
+<h3 id="êêåäæß½ç">ÊÊÅäÆ÷±ß½ç</h3>
+<p>ÐÂÔö <code>libs/curl_cffi_client.py</code>£¬Ö°ÔðÏÞ¶¨Îª£º</p>
+<ol type="1">
+<li>½« Tornado <code>HTTPRequest</code> Ó³ÉäÎª
+<code>curl_cffi.requests.AsyncSession</code> ÇëÇó¡£</li>
+<li>´«µÝ·½·¨¡¢URL¡¢ÇëÇóÍ·¡¢ÇëÇóÌå¡¢Á¬½Ó³¬Ê±¡¢×Ü³¬Ê±ºÍ´úÀíÅäÖÃ¡£</li>
+<li>±£³Ö QD µ±Ç°µÄ²»×Ô¶¯ÖØ¶¨ÏòºÍÖ¤ÊéÐ£Ñé²ßÂÔ¡£</li>
+<li>Ö´ÐÐ Chrome 110 ä¯ÀÀÆ÷Ö¸ÎÆÄ£Äâ¡£</li>
+<li>½«ÏìÓ¦×´Ì¬¡¢Ô­Òò¡¢ÏìÓ¦Í·ºÍÏìÓ¦Ìå×ª»»Îª Tornado
+<code>HTTPResponse</code>¡£</li>
+<li>Ö´ÐÐÏÂÔØ´óÐ¡ÏÞÖÆ£¬±ÜÃâä¯ÀÀÆ÷Ö¸ÎÆ´«ÊäÈÆ¹ý QD µÄ×ÊÔ´Ô¼Êø¡£</li>
+</ol>
+<p>ÊÊÅäÆ÷·µ»Ø Tornado <code>HTTPResponse</code> ºó£¬ºóÐøÈÔÓÉÏÖÓÐ
+<code>Fetcher</code> ¸ºÔð Cookie ºÏ²¢¡¢±àÂëÅÐ¶Ï¡¢HAR
+ÏìÓ¦Éú³É¡¢¶ÏÑÔºÍ±äÁ¿ÌáÈ¡¡£</p>
+<h3 id="nodeseek-har">NodeSeek HAR</h3>
+<p>NodeSeek
+Ä£°åµÄÇ©µ½ÇëÇóºÍ»ý·Ö¼ÇÂ¼ÇëÇó¶¼Ìí¼ÓÄÚ²¿Ö¸ÎÆÍ·¡£Ä£°å¼ÌÐøÌá¹©ÈÎÎñ±äÁ¿£º</p>
+<ul>
+<li><code>fixed</code>£ºÇëÇó
+<code>POST /api/attendance?random=false</code>£¬¹Ì¶¨»ñµÃ 5 »ý·Ö¡£</li>
+<li><code>random</code>£ºÇëÇó
+<code>POST /api/attendance?random=true</code>£¬»ñµÃËæ»ú»ý·Ö¡£</li>
+<li>Áô¿Õ£ºÄ¬ÈÏÊ¹ÓÃ <code>fixed</code>¡£</li>
+</ul>
+<p>ÖØ¸´Ç©µ½·µ»Ø HTTP 500 ºÍ¡°½ñÌìÒÑÍê³ÉÇ©µ½¡±Ê±£¬ÈÔÓÉ HAR
+¶ÏÑÔ½«ÆäÊ¶±ðÎªÕý³£Íê³É¡£</p>
+<h2 id="íîóàí">´íÎó´¦Àí</h2>
+<ul>
+<li>Î´°²×°
+<code>curl_cffi</code>£ºÖ»ÓÐÆôÓÃÖ¸ÎÆ´«ÊäµÄÇëÇóÊ§°Ü£¬²¢ÌáÊ¾¾µÏñ»òÒÀÀµÈ±Ê§£»QD
+·þÎñ±¾ÉíÈÔ¿ÉÆô¶¯¡£</li>
+<li>Ö¸ÎÆÖµ²»ÊÜÖ§³Ö£º·µ»Ø°üº¬¸ÃÖµµÄÅäÖÃ´íÎó£¬±ÜÃâ¾²Ä¬Ê¹ÓÃ´íÎó TLS
+Ö¸ÎÆ¡£</li>
+<li>TLS¡¢Á¬½Ó»ò³¬Ê±Òì³££º×ª»»Îª QD ¿É¼ÇÂ¼µÄ HTTP 599
+ÏìÓ¦£¬±£Áô¿ÉÕï¶ÏµÄÒì³£ÐÅÏ¢¡£</li>
+<li>ÏìÓ¦³¬¹ýÏÂÔØÏÞÖÆ£ºÖÕÖ¹¶ÁÈ¡²¢·µ»ØÃ÷È·µÄ´óÐ¡ÏÞÖÆ´íÎó¡£</li>
+<li>NodeSeek Cookie
+Ê§Ð§£ºÓÉÄ£°åµÇÂ¼Ð£Ñé»ò½Ó¿ÚÏìÓ¦¶ÏÑÔ±¨¸æ£¬²»³¢ÊÔ×Ô¶¯µÇÂ¼»òÈÆ¹ýÑéÖ¤¡£</li>
+</ul>
+<p>ºËÐÄÂ·ÓÉºÍÒì³£×ª»»´¦Ìí¼ÓÖÐÎÄ×¢ÊÍ£¬ËµÃ÷ÄÚ²¿ÇëÇóÍ·µÄ°²È«±ß½çÒÔ¼°ÏìÓ¦ÊÊÅäÔ­Òò¡£</p>
+<h2 id="docker-óë-github-²¼">Docker Óë GitHub ·¢²¼</h2>
+<p>ÐÂÔö fork ×¨ÓÃ Dockerfile£¬Ö±½Ó¸´ÖÆ GitHub Actions
+¼ì³öµÄ±¾²Ö¿â´úÂë¡£²»ÄÜÑØÓÃµ±Ç° Dockerfile ÔÚ¹¹½¨½×¶Î´Ó Gitee
+¿ËÂ¡ÉÏÓÎµÄ×ö·¨£¬·ñÔò fork ÐÞ¸Ä»á±»¸²¸Ç¡£</p>
+<p>ÐÂÔö GHCR ·¢²¼¹¤×÷Á÷£º</p>
+<ul>
+<li>´¥·¢Ìõ¼þ£ºGitHub Release ·¢²¼£¬Ò²Ö§³ÖÊÖ¶¯´¥·¢ÓÃÓÚÑéÖ¤¡£</li>
+<li>¹¹½¨Æ½Ì¨£º½ö <code>linux/amd64</code>¡£</li>
+<li>·¢²¼µØÖ·£º<code>ghcr.io/ymting/qd</code>¡£</li>
+<li>È¨ÏÞ£ºÊ¹ÓÃ²Ö¿â×Ô´ø <code>GITHUB_TOKEN</code> µÄ
+<code>packages: write</code>£¬²»ÐèÒª Docker Hub ÃÜÔ¿¡£</li>
+<li>¹¹½¨²ßÂÔ£ºÒ»´Î Buildx ¹¹½¨ºÍÒ»´Î¾µÏñ²ãÉÏ´«£¬Í¬Ê±Ð´Èë¶à¸ö±êÇ©¡£</li>
+</ul>
+<p>°æ±¾ <code>20260715.1</code> ·¢²¼ºóµÄ±êÇ©Îª£º</p>
+<pre class="text"><code>ghcr.io/ymting/qd:20260715.1
+ghcr.io/ymting/qd:latest
+ghcr.io/ymting/qd:sha-&lt;Ìá½»¶Ì¹þÏ£&gt;</code></pre>
+<p>Èý¸ö±êÇ©ÒýÓÃÍ¬Ò»¾µÏñÇåµ¥£¬²»ÖØ¸´¹¹½¨£¬Ò²²»»á°Ñ¾µÏñ²ã´æ´¢À©´óÈý±¶¡£</p>
+<h2 id="âêôóëñéêõ">²âÊÔÓëÑéÊÕ</h2>
+<h3 id="ô²âêô">×Ô¶¯²âÊÔ</h3>
+<ol type="1">
+<li>ÎÞÄÚ²¿Ö¸ÎÆÍ·Ê±ÈÔµ÷ÓÃÔ­ Tornado/PyCurl ¿Í»§¶Ë¡£</li>
+<li><code>chrome110</code> ±ê¼ÇÕýÈ·Â·ÓÉµ½ <code>curl_cffi</code>¡£</li>
+<li>ÄÚ²¿ÇëÇóÍ·ÔÚ·¢ËÍÇ°±»É¾³ý¡£</li>
+<li>·½·¨¡¢URL¡¢ÇëÇóÍ·¡¢ÇëÇóÌå¡¢³¬Ê±ºÍ´úÀíÓ³ÉäÕýÈ·¡£</li>
+<li><code>curl_cffi</code> ÏìÓ¦ÕýÈ·×ª»»Îª Tornado
+<code>HTTPResponse</code>¡£</li>
+<li>È±ÉÙÒÀÀµ¡¢Î´ÖªÖ¸ÎÆ¡¢TLS Òì³£ºÍÏÂÔØ³¬ÏÞ¾ù²úÉúÃ÷È·´íÎó¡£</li>
+<li>ÏÖÓÐ HAR ÏìÓ¦¡¢Cookie ºÍ¶ÏÑÔ´¦Àí¼ÌÐø¹¤×÷¡£</li>
+</ol>
+<h3 id="ëµ½ëñéêõ">¶Ëµ½¶ËÑéÊÕ</h3>
+<ol type="1">
+<li>Ê¹ÓÃ»·¾³±äÁ¿ÁÙÊ±×¢ÈëÓÐÐ§ NodeSeek Cookie£¬²»Ð´ÈëÎÄ¼þ¡£</li>
+<li>ÔÚÐÞ¸ÄºóµÄ QD Fetcher ÖÐÖ´ÐÐ NodeSeek HAR¡£</li>
+<li>ÑéÖ¤¹Ì¶¨Ä£Ê½ÇëÇó <code>random=false</code>£¬Ëæ»úÄ£Ê½ÇëÇó
+<code>random=true</code>¡£</li>
+<li>ÑéÖ¤Ê×´ÎÇ©µ½³É¹¦ºÍµ±ÌìÖØ¸´Ç©µ½¶¼µÃµ½ÕýÈ·ÈÎÎñ½á¹û¡£</li>
+<li>´´½¨ GitHub Release <code>20260715.1</code>¡£</li>
+<li>µÈ´ý GitHub Actions Íê³É£¬È·ÈÏÈý¸ö GHCR ±êÇ©¾ùÖ¸ÏòÍ¬Ò»¿ÉÀ­È¡µÄ
+<code>linux/amd64</code> ¾µÏñ¡£</li>
+</ol>
+<h2 id="óëø¹ö">·¢²¼Óë»Ø¹ö</h2>
+<p>·¢²¼Ç°¸üÐÂ <code>version.json</code> ºÍ
+<code>CHANGELOG.md</code>¡£Release ËµÃ÷Ê¹ÓÃÖÐÎÄ£¬¸ÅÀ¨ NodeSeek HAR
+ä¯ÀÀÆ÷Ö¸ÎÆÖ§³Ö¡¢¾µÏñ¼Ü¹¹ºÍÊ¹ÓÃ·½Ê½¡£</p>
+<p>Èç¹û <code>latest</code> ³öÏÖ»Ø¹é£¬¿ÉÁ¢¼´°Ñ²¿Êð¾µÏñ¹Ì¶¨µ½
+<code>20260715.1</code> »ò¶ÔÓ¦
+<code>sha-&lt;Ìá½»¶Ì¹þÏ£&gt;</code>£»ºóÐøÐÞ¸´·¢²¼ÐÂ°æ±¾ºóÔÙÒÆ¶¯
+<code>latest</code>¡£</p>
+</body>
+</html>
