@@ -103,6 +103,21 @@ ghcr.io/ymting/qd:sha-<提交短哈希>
 
 三个标签引用同一镜像清单，不重复构建，也不会把镜像层存储扩大三倍。
 
+## README 与上游归档
+
+当前根 README 的徽章、工作流、镜像地址和大部分链接都指向 `qd-today/qd`，继续作为 fork 首页会让使用者误以为构建状态和镜像属于本仓库。
+
+发布前执行以下整理：
+
+1. 将当前上游 README 完整归档为 `docs/archive/upstream-readme-20260715.md`，并生成同目录 HTML 阅读版。
+2. 新的根 README 明确说明本项目基于 `qd-today/qd`，提供上游仓库和归档 README 的超链接。
+3. 首页只展示 `ymting/qd` 的真实状态、GHCR 镜像地址、`linux/amd64` 约束、NodeSeek HAR 使用方式和安全注意事项。
+4. 删除或替换指向上游构建状态、Docker Hub 镜像和仓库统计的误导徽章。
+5. 保留 MIT 许可证、原作者和贡献者归属；完整贡献者名单继续保存在归档 README 中。
+6. 根 README 更新后生成 `docs/README.html`，满足项目的 Markdown/HTML 文档流水线要求。
+
+新的根 README 至少包含：项目定位、与上游的关系、本次增强、镜像拉取与启动示例、镜像标签说明、NodeSeek HAR 配置、Cookie 安全提示、文档链接、更新与回滚、许可证和致谢。
+
 ## 测试与验收
 
 ### 自动测试
@@ -114,6 +129,7 @@ ghcr.io/ymting/qd:sha-<提交短哈希>
 5. `curl_cffi` 响应正确转换为 Tornado `HTTPResponse`。
 6. 缺少依赖、未知指纹、TLS 异常和下载超限均产生明确错误。
 7. 现有 HAR 响应、Cookie 和断言处理继续工作。
+8. README、归档 README 和 NodeSeek HAR 中不存在真实 Cookie 或认证令牌。
 
 ### 端到端验收
 
@@ -123,10 +139,10 @@ ghcr.io/ymting/qd:sha-<提交短哈希>
 4. 验证首次签到成功和当天重复签到都得到正确任务结果。
 5. 创建 GitHub Release `20260715.1`。
 6. 等待 GitHub Actions 完成，确认三个 GHCR 标签均指向同一可拉取的 `linux/amd64` 镜像。
+7. 检查 GitHub 项目首页的 README 链接、GHCR 地址和上游归档链接均可用。
 
 ## 发布与回滚
 
 发布前更新 `version.json` 和 `CHANGELOG.md`。Release 说明使用中文，概括 NodeSeek HAR 浏览器指纹支持、镜像架构和使用方式。
 
 如果 `latest` 出现回归，可立即把部署镜像固定到 `20260715.1` 或对应 `sha-<提交短哈希>`；后续修复发布新版本后再移动 `latest`。
-
