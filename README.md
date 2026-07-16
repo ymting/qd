@@ -19,13 +19,13 @@
 固定版本部署：
 
 ```bash
-docker pull ghcr.io/ymting/qd:20260716.1
+docker pull ghcr.io/ymting/qd:20260716.2
 docker run -d \
   --name qd \
   --restart unless-stopped \
   -p 8923:80 \
   -v "$PWD/config:/usr/src/app/config" \
-  ghcr.io/ymting/qd:20260716.1
+  ghcr.io/ymting/qd:20260716.2
 ```
 
 需要自动跟随最新正式版本时，将镜像改为：
@@ -38,7 +38,7 @@ ghcr.io/ymting/qd:latest
 
 当前 Fork 镜像只支持 64 位 x86，即 Docker 平台 `linux/amd64`。
 
-仓库自带的 Compose 配置默认使用固定版本 `20260716.1`：
+仓库自带的 Compose 配置默认使用固定版本 `20260716.2`：
 
 ```bash
 docker compose up -d
@@ -54,7 +54,7 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 
 | 标签 | 用途 |
 | --- | --- |
-| `ghcr.io/ymting/qd:20260716.1` | 本次正式发布版本，推荐生产环境固定使用 |
+| `ghcr.io/ymting/qd:20260716.2` | 本次正式发布版本，推荐生产环境固定使用 |
 | `ghcr.io/ymting/qd:latest` | 最新正式版本，发布新版本时更新 |
 | `ghcr.io/ymting/qd:sha-<提交短哈希>` | 精确对应源码提交，便于定位和回滚 |
 
@@ -67,7 +67,7 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 1. 在浏览器中登录 NodeSeek，并完成人机验证。
 2. 将 HAR 导入 QD，新建对应任务。
 3. 将任务变量 `cookie` 设置为浏览器中复制的完整 Cookie。
-4. 设置任务变量 `sign_mode_填random随机_填fixed固定5`；只填写下表中的小写英文值。
+4. 设置任务变量 `sign_mode`；只填写下表中的小写英文值。
 5. 手动执行一次任务，确认 Cookie、网络出口和签到结果正常后再启用定时运行。
 
 | 配置值 | 签到方式 |
@@ -79,8 +79,10 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 
 模板还提供两个浏览器指纹变量：
 
-- `browser_fingerprint_默认chrome`：留空或填 `chrome`，使用当前镜像中 `curl_cffi` 的最新 Chrome 指纹；也可填 `chrome136`、`chrome142`、`chrome145` 或 `chrome146`。
-- `browser_user_agent_默认auto`：留空或填 `auto`，由 `curl_cffi` 生成与指纹成套的默认 UA 和 Client Hints；只有确需匹配浏览器现有 `cf_clearance` 时，才填写该浏览器的完整 UA。
+- `browser_fingerprint`：留空或填 `chrome`，使用当前镜像中 `curl_cffi` 的最新 Chrome 指纹；也可填 `chrome136`、`chrome142`、`chrome145` 或 `chrome146`。
+- `browser_user_agent`：留空或填 `auto`，由 `curl_cffi` 生成与指纹成套的 UA 和 Client Hints；只有确需匹配浏览器现有 `cf_clearance` 时，才填写该浏览器的完整 UA。
+
+从 `20260716.2` 开始，以上变量名全部使用纯英文。QD 的 HAR 前端变量提取器不支持变量名中包含中文；旧变量名会被截断，导致提交后值被置空并回退到固定模式。升级后必须重新导入本仓库中的 HAR，再新建任务或重新填写变量。
 
 模板中的 `X-QD-Impersonate` 是本 Fork 使用的内部路由标记，发送到 NodeSeek 前会被删除。重复签到返回 HTTP 500 和“今天已完成签到”时，模板会将其识别为正常完成。
 

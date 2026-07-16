@@ -2,7 +2,7 @@ version: "3"
 
 services:
   qd:
-    image: ${QD_IMAGE:-ghcr.io/ymting/qd:20260716.1}
+    image: ${QD_IMAGE:-ghcr.io/ymting/qd:20260716.2}
     container_name: qd
     depends_on:
       - redis

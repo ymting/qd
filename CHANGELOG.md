@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Nothing right now.
 
+## [20260716.2] - 2026.07.16 更新
+
+### Fixed
+
+1. 修复 NodeSeek HAR 的签到模式填写 `random` 后无法保存、重新打开任务被置空并回退到固定 5 积分的问题。
+2. 将 `sign_mode`、`browser_fingerprint`、`browser_user_agent` 统一为纯英文变量名，避免 QD 前端变量提取正则遇到中文时截断键名。
+3. 新增 NodeSeek HAR 回归测试，覆盖四步模板结构、变量名合法性及随机/固定/空值的请求参数渲染。
+
+### Migration
+
+1. 旧任务不会自动迁移变量名。升级后请重新导入 `templates/NodeSeek-可选签到模式.har`，并新建任务或重新填写任务变量。
+2. 随机模式填写 `sign_mode=random`；固定模式填写 `sign_mode=fixed` 或留空。
+
 ## [20260716.1] - 2026.07.16 更新
 
 ### Changed

@@ -187,3 +187,6 @@ cache
 
 alembic.ini
 .hintrc
+
+# 临时调试记录仅用于本地排障，摘要已写入项目 memory。
+/.planning/debug/
