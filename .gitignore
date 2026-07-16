@@ -190,3 +190,7 @@ alembic.ini
 
 # 临时调试记录仅用于本地排障，摘要已写入项目 memory。
 /.planning/debug/
+
+# 项目文档与记忆统一保存在 Git 仓库外层，仅供本地维护。
+/docs/
+/memory/

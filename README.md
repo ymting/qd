@@ -2,7 +2,7 @@
 
 这是一个基于 [qd-today/qd](https://github.com/qd-today/qd) 的兼容增强 Fork。项目继续使用 QD 的 HAR 编辑、变量、断言、日志和定时任务能力，并为需要现代浏览器 TLS 指纹的站点增加按请求启用的传输方式。
 
-上游项目的原 README 已完整保存在 [Markdown 归档](docs/archive/upstream-readme-20260715.md) 和 [HTML 阅读版](docs/archive/upstream-readme-20260715.html)。原作者、贡献者及许可证归属不变。
+上游项目的原 README 已完整归档到本地工作区外层的 `docs/` 目录，该目录不提交到 GitHub。原作者、贡献者及许可证归属不变。
 
 ## 本 Fork 的增强
 
@@ -12,7 +12,7 @@
 - 提供适配 NodeSeek 当前 Cloudflare/TLS 环境的 Cookie 签到 HAR。
 - GitHub Actions 仅构建 `linux/amd64` 镜像并发布到 GitHub Container Registry。
 
-详细设计见 [NodeSeek HAR 浏览器指纹传输设计](docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md)。
+NodeSeek HAR 浏览器指纹传输设计保存在本地工作区外层的 `docs/` 目录，不提交到 GitHub。
 
 ## 快速部署
 
@@ -115,9 +115,8 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 
 ## 文档
 
-- [上游 README 归档](docs/archive/upstream-readme-20260715.md)
-- [项目 README HTML 阅读版](docs/README.html)
-- [浏览器指纹传输设计](docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md)
+- 本地维护文档统一保存在工作区外层的 `docs/` 目录，不提交到 GitHub。
+- 项目记忆统一保存在工作区外层的 `memory/` 目录，不提交到 GitHub。
 - [更新日志](CHANGELOG.md)
 - [MIT 许可证](LICENSE)
 
@@ -125,6 +124,6 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 
 ## 致谢与许可
 
-感谢 [qd-today/qd](https://github.com/qd-today/qd)、其原作者和所有贡献者。本 Fork 仅维护上述兼容增强；QD 的完整原始介绍和贡献者名单保存在[上游 README 归档](docs/archive/upstream-readme-20260715.md)。
+感谢 [qd-today/qd](https://github.com/qd-today/qd)、其原作者和所有贡献者。本 Fork 仅维护上述兼容增强；QD 的完整原始介绍和贡献者名单已归档到本地工作区外层的 `docs/` 目录。
 
 本项目继续遵循 [MIT License](LICENSE)。
