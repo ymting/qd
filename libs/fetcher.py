@@ -444,6 +444,11 @@ class Fetcher(object):
         ):
             msg += f", \\r\\nResponse Error : {response.error or response.reason}"
 
+        # 浏览器指纹链路失败时追加脱敏分类，避免只看到 403 而无法判断验证层级。
+        failure_diagnostic = getattr(response, "_qd_failure_diagnostic", "")
+        if not success and msg and failure_diagnostic:
+            msg += f", \\r\\nResponse Diagnostic : {failure_diagnostic}"
+
         for r in rule.get("extract_variables") or "":
             pattern = r["re"]
             flags = 0

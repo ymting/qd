@@ -96,69 +96,49 @@
   <link rel="stylesheet" href="C:\Users\tingyu\.codex\skills\huashu-md-html\templates\report\theme.css" />
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">QD for Python3</h1>
-</header>
-<p>这是一个基于 <a href="https://github.com/qd-today/qd">qd-today/qd</a>
-的兼容增强 Fork。项目继续使用 QD 的 HAR
-编辑、变量、断言、日志和定时任务能力，并为需要现代浏览器 TLS
-指纹的站点增加按请求启用的传输方式。</p>
-<p>上游项目的原 README 已完整保存在 <a
-href="docs/archive/upstream-readme-20260715.md">Markdown 归档</a> 和 <a
-href="docs/archive/upstream-readme-20260715.html">HTML
-阅读版</a>。原作者、贡献者及许可证归属不变。</p>
-<h2 id="本-fork-的增强">本 Fork 的增强</h2>
+<h1>QD for Python3</h1>
+<p>这是一个基于 <a href="https://github.com/qd-today/qd">qd-today/qd</a> 的兼容增强 Fork。项目继续使用 QD 的 HAR 编辑、变量、断言、日志和定时任务能力，并为需要现代浏览器 TLS 指纹的站点增加按请求启用的传输方式。</p>
+<p>上游项目的原 README 已完整保存在 <a href="docs/archive/upstream-readme-20260715.md">Markdown 归档</a> 和 <a href="docs/archive/upstream-readme-20260715.html">HTML 阅读版</a>。原作者、贡献者及许可证归属不变。</p>
+<h2>本 Fork 的增强</h2>
 <ul>
-<li>HAR 请求可通过内部头 <code>X-QD-Impersonate: chrome110</code> 选择
-<code>curl_cffi</code> 浏览器指纹传输。</li>
-<li>未设置内部头的请求继续使用 QD 原有 Tornado/PyCurl
-链路，现有模板行为不变。</li>
+<li>HAR 请求可通过内部头 <code>X-QD-Impersonate</code> 选择 <code>curl_cffi</code> 浏览器指纹传输。</li>
+<li>未设置内部头的请求继续使用 QD 原有 Tornado/PyCurl 链路，现有模板行为不变。</li>
 <li>内部头只负责 QD 请求路由，发送到目标网站前会被删除。</li>
 <li>提供适配 NodeSeek 当前 Cloudflare/TLS 环境的 Cookie 签到 HAR。</li>
-<li>GitHub Actions 仅构建 <code>linux/amd64</code> 镜像并发布到 GitHub
-Container Registry。</li>
+<li>GitHub Actions 仅构建 <code>linux/amd64</code> 镜像并发布到 GitHub Container Registry。</li>
 </ul>
-<p>详细设计见 <a
-href="docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md">NodeSeek
-HAR 浏览器指纹传输设计</a>。</p>
-<h2 id="快速部署">快速部署</h2>
+<p>详细设计见 <a href="docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md">NodeSeek HAR 浏览器指纹传输设计</a>。</p>
+<h2>快速部署</h2>
 <p>固定版本部署：</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull ghcr.io/ymting/qd:20260715.1</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">-d</span> <span class="dt">\</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--name</span> qd <span class="dt">\</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--restart</span> unless-stopped <span class="dt">\</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-p</span> 8923:80 <span class="dt">\</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> <span class="st">&quot;</span><span class="va">$PWD</span><span class="st">/config:/usr/src/app/config&quot;</span> <span class="dt">\</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  ghcr.io/ymting/qd:20260715.1</span></code></pre></div>
+<pre><code class="language-bash">docker pull ghcr.io/ymting/qd:20260716.1
+docker run -d \
+  --name qd \
+  --restart unless-stopped \
+  -p 8923:80 \
+  -v &quot;$PWD/config:/usr/src/app/config&quot; \
+  ghcr.io/ymting/qd:20260716.1
+</code></pre>
 <p>需要自动跟随最新正式版本时，将镜像改为：</p>
-<pre class="text"><code>ghcr.io/ymting/qd:latest</code></pre>
-<p>浏览器访问 <code>http://服务器地址:8923</code>。生产部署前请按 QD
-原有配置方式设置安全的 <code>COOKIE_SECRET</code>、<code>AES_KEY</code>
-和数据库参数，不要沿用公开示例密钥。</p>
-<p>当前 Fork 镜像只支持 64 位 x86，即 Docker 平台
-<code>linux/amd64</code>。</p>
-<p>仓库自带的 Compose 配置默认使用固定版本 <code>20260715.1</code>：</p>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> compose up <span class="at">-d</span></span></code></pre></div>
+<pre><code class="language-text">ghcr.io/ymting/qd:latest
+</code></pre>
+<p>浏览器访问 <code>http://服务器地址:8923</code>。生产部署前请按 QD 原有配置方式设置安全的 <code>COOKIE_SECRET</code>、<code>AES_KEY</code> 和数据库参数，不要沿用公开示例密钥。</p>
+<p>当前 Fork 镜像只支持 64 位 x86，即 Docker 平台 <code>linux/amd64</code>。</p>
+<p>仓库自带的 Compose 配置默认使用固定版本 <code>20260716.1</code>：</p>
+<pre><code class="language-bash">docker compose up -d
+</code></pre>
 <p>需要切换到 <code>latest</code> 或指定回滚版本时，可覆盖镜像变量：</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">QD_IMAGE</span><span class="op">=</span>ghcr.io/ymting/qd:latest <span class="ex">docker</span> compose up <span class="at">-d</span></span></code></pre></div>
-<h2 id="镜像标签">镜像标签</h2>
+<pre><code class="language-bash">QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
+</code></pre>
+<h2>镜像标签</h2>
 <table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr>
 <th>标签</th>
 <th>用途</th>
 </tr>
 </thead>
-<tbody>
-<tr>
-<td><code>ghcr.io/ymting/qd:20260715.1</code></td>
+<tbody><tr>
+<td><code>ghcr.io/ymting/qd:20260716.1</code></td>
 <td>本次正式发布版本，推荐生产环境固定使用</td>
 </tr>
 <tr>
@@ -169,21 +149,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 <td><code>ghcr.io/ymting/qd:sha-&lt;提交短哈希&gt;</code></td>
 <td>精确对应源码提交，便于定位和回滚</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>三个标签由同一次构建生成并引用同一镜像，不会重复构建镜像层。</p>
-<h2 id="nodeseek-签到">NodeSeek 签到</h2>
-<p>模板：<a
-href="templates/NodeSeek-可选签到模式.har">NodeSeek-可选签到模式.har</a></p>
-<ol type="1">
+<h2>NodeSeek 签到</h2>
+<p>模板：<a href="templates/NodeSeek-%E5%8F%AF%E9%80%89%E7%AD%BE%E5%88%B0%E6%A8%A1%E5%BC%8F.har">NodeSeek-可选签到模式.har</a></p>
+<ol>
 <li>在浏览器中登录 NodeSeek，并完成人机验证。</li>
 <li>将 HAR 导入 QD，新建对应任务。</li>
-<li>将任务变量 <code>cookie</code> 设置为浏览器中复制的完整
-Cookie。</li>
-<li>设置任务变量
-<code>sign_mode_填random随机_填fixed固定5</code>；只填写下表中的小写英文值。</li>
-<li>手动执行一次任务，确认
-Cookie、网络出口和签到结果正常后再启用定时运行。</li>
+<li>将任务变量 <code>cookie</code> 设置为浏览器中复制的完整 Cookie。</li>
+<li>设置任务变量 <code>sign_mode_填random随机_填fixed固定5</code>；只填写下表中的小写英文值。</li>
+<li>手动执行一次任务，确认 Cookie、网络出口和签到结果正常后再启用定时运行。</li>
 </ol>
 <table>
 <thead>
@@ -192,8 +167,7 @@ Cookie、网络出口和签到结果正常后再启用定时运行。</li>
 <th>签到方式</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td><code>fixed</code></td>
 <td>固定获得 5 积分，也是留空时的默认模式</td>
 </tr>
@@ -201,47 +175,49 @@ Cookie、网络出口和签到结果正常后再启用定时运行。</li>
 <td><code>random</code></td>
 <td>使用随机积分模式</td>
 </tr>
-</tbody>
-</table>
-<p>不要填写布尔值 <code>true</code> 或 <code>false</code>。模板会自行把
-<code>fixed</code> 和 <code>random</code> 转换为 NodeSeek
-接口需要的参数。</p>
-<p>模板中的 <code>X-QD-Impersonate: chrome110</code> 是本 Fork
-使用的内部路由标记，已经配置完成，用户无需修改。重复签到返回 HTTP 500
-和“今天已完成签到”时，模板会将其识别为正常完成。</p>
-<h2 id="cookie-与验证边界">Cookie 与验证边界</h2>
+</tbody></table>
+<p>不要填写布尔值 <code>true</code> 或 <code>false</code>。模板会自行把 <code>fixed</code> 和 <code>random</code> 转换为 NodeSeek 接口需要的参数。</p>
+<p>模板还提供两个浏览器指纹变量：</p>
 <ul>
-<li>本项目不会使用账号密码登录 NodeSeek，也不会绕过 Cloudflare
-人机验证。</li>
-<li>Cookie、<code>pjwt</code>、<code>cf_clearance</code>
-等内容仅应保存为 QD 的私有任务变量。</li>
-<li>不要把真实 Cookie 写入 HAR、README、Issue、Actions 日志或其他 Git
-文件。</li>
-<li>Cookie 失效或 Cloudflare
-要求重新验证时，需要在浏览器重新登录并更新任务变量。</li>
-<li>浏览器指纹传输只能解决客户端 TLS 兼容问题，不能保证任意数据中心 IP
-都能通过站点风控。</li>
+<li><code>browser_fingerprint_默认chrome</code>：留空或填 <code>chrome</code>，使用当前镜像中 <code>curl_cffi</code> 的最新 Chrome 指纹；也可填 <code>chrome136</code>、<code>chrome142</code>、<code>chrome145</code> 或 <code>chrome146</code>。</li>
+<li><code>browser_user_agent_默认auto</code>：留空或填 <code>auto</code>，由 <code>curl_cffi</code> 生成与指纹成套的默认 UA 和 Client Hints；只有确需匹配浏览器现有 <code>cf_clearance</code> 时，才填写该浏览器的完整 UA。</li>
 </ul>
-<h2 id="文档">文档</h2>
+<p>模板中的 <code>X-QD-Impersonate</code> 是本 Fork 使用的内部路由标记，发送到 NodeSeek 前会被删除。重复签到返回 HTTP 500 和“今天已完成签到”时，模板会将其识别为正常完成。</p>
+<h3>NodeSeek 403 排障</h3>
+<p><code>HTTP 403</code> 表示 TLS 请求已经成功到达网站，但 Cloudflare 或 NodeSeek 拒绝了当前请求。即使浏览器和容器的公网 IP、UA 完全相同，浏览器重新验证后自动更新的 <code>cf_clearance</code> 也不会同步到 QD；隔夜 Cookie、修改密码后的旧 Cookie、过期的 <code>session</code>/<code>pjwt</code> 都可能导致 403。</p>
+<p>按以下顺序处理：</p>
+<ol>
+<li>在同一浏览器配置文件中重新打开 NodeSeek，确认已登录并完成人机验证。</li>
+<li>在开发者工具的网络面板中确认 <code>/api/account/credit/page-1</code> 返回 200。</li>
+<li>立即复制该请求当前的完整 Cookie，整体覆盖 QD 任务变量 <code>cookie</code>，不要只替换其中一个字段。</li>
+<li>保持指纹和 UA 为默认 <code>chrome</code> + <code>auto</code>，立即手动运行一次 QD 任务。</li>
+</ol>
+<p>从 <code>20260716.1</code> 开始，失败日志会增加脱敏的 <code>Response Diagnostic</code>：</p>
 <ul>
-<li><a href="docs/archive/upstream-readme-20260715.md">上游 README
-归档</a></li>
+<li><code>Cloudflare challenge/WAF</code>：重新完成人机验证并更新完整 Cookie。</li>
+<li><code>Cloudflare edge rejection</code>：更新 <code>cf_clearance</code>，并检查浏览器指纹与 UA 是否成套。</li>
+<li><code>NodeSeek application/auth</code>：NodeSeek 登录态失效，重新登录后更新完整 Cookie。</li>
+</ul>
+<p>诊断日志不会输出请求 Cookie 或认证令牌。不要删除模板对 401/403/429 的失败断言，也不要把 403 当作签到成功。</p>
+<h2>Cookie 与验证边界</h2>
+<ul>
+<li>本项目不会使用账号密码登录 NodeSeek，也不会绕过 Cloudflare 人机验证。</li>
+<li>Cookie、<code>pjwt</code>、<code>cf_clearance</code> 等内容仅应保存为 QD 的私有任务变量。</li>
+<li>不要把真实 Cookie 写入 HAR、README、Issue、Actions 日志或其他 Git 文件。</li>
+<li>Cookie 失效或 Cloudflare 要求重新验证时，需要在浏览器重新登录并更新任务变量。</li>
+<li>浏览器指纹传输只能解决客户端 TLS 兼容问题，不能保证任意数据中心 IP 都能通过站点风控。</li>
+</ul>
+<h2>文档</h2>
+<ul>
+<li><a href="docs/archive/upstream-readme-20260715.md">上游 README 归档</a></li>
 <li><a href="docs/README.html">项目 README HTML 阅读版</a></li>
-<li><a
-href="docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md">浏览器指纹传输设计</a></li>
+<li><a href="docs/superpowers/specs/2026-07-15-nodeseek-curl-cffi-transport-design.md">浏览器指纹传输设计</a></li>
 <li><a href="CHANGELOG.md">更新日志</a></li>
 <li><a href="LICENSE">MIT 许可证</a></li>
 </ul>
-<p>升级前请查看 <a
-href="CHANGELOG.md">CHANGELOG.md</a>。出现回归时，可将镜像从
-<code>latest</code> 固定到版本标签或对应的
-<code>sha-&lt;提交短哈希&gt;</code>。</p>
-<h2 id="致谢与许可">致谢与许可</h2>
-<p>感谢 <a
-href="https://github.com/qd-today/qd">qd-today/qd</a>、其原作者和所有贡献者。本
-Fork 仅维护上述兼容增强；QD 的完整原始介绍和贡献者名单保存在<a
-href="docs/archive/upstream-readme-20260715.md">上游 README
-归档</a>。</p>
+<p>升级前请查看 <a href="CHANGELOG.md">CHANGELOG.md</a>。出现回归时，可将镜像从 <code>latest</code> 固定到版本标签或对应的 <code>sha-&lt;提交短哈希&gt;</code>。</p>
+<h2>致谢与许可</h2>
+<p>感谢 <a href="https://github.com/qd-today/qd">qd-today/qd</a>、其原作者和所有贡献者。本 Fork 仅维护上述兼容增强；QD 的完整原始介绍和贡献者名单保存在<a href="docs/archive/upstream-readme-20260715.md">上游 README 归档</a>。</p>
 <p>本项目继续遵循 <a href="LICENSE">MIT License</a>。</p>
 </body>
 </html>

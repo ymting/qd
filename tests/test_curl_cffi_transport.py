@@ -21,6 +21,12 @@ class FakeHeaders:
     def multi_items(self):
         return list(self._items)
 
+    def get(self, name, default=None):
+        for key, value in reversed(self._items):
+            if key.lower() == name.lower():
+                return value
+        return default
+
 
 class FakeCurlResponse:
     def __init__(
@@ -240,6 +246,108 @@ def test_adapter_maps_request_and_preserves_duplicate_headers():
         "second=2; Path=/",
     ]
     assert response.request_time == pytest.approx(0.125)
+
+
+def test_auto_user_agent_keeps_curl_cffi_default_browser_headers():
+    request = make_request(
+        {
+            "X-QD-Impersonate": "chrome",
+            "User-Agent": "auto",
+            "Cookie": "session=test",
+        }
+    )
+    FakeAsyncSession.response = FakeCurlResponse()
+    FakeAsyncSession.error = None
+    FakeAsyncSession.emit_content = True
+
+    with patch.object(curl_cffi_client_module, "AsyncSession", FakeAsyncSession):
+        asyncio.run(
+            CurlCffiClient().fetch(
+                request,
+                impersonate="chrome",
+                download_size_limit=1024,
+            )
+        )
+
+    sent_headers = dict(FakeAsyncSession.request_kwargs["headers"])
+    assert "User-Agent" not in sent_headers
+    assert sent_headers["Cookie"] == "session=test"
+
+
+def test_current_chrome_alias_is_supported_and_cloudflare_is_classified():
+    request = make_request({"Cookie": "session=secret"})
+    FakeAsyncSession.response = FakeCurlResponse(
+        status_code=403,
+        reason="Forbidden",
+        content=b"<html><title>Just a moment...</title></html>",
+        headers=[
+            ("Server", "cloudflare"),
+            ("Content-Type", "text/html; charset=UTF-8"),
+            ("cf-mitigated", "challenge"),
+        ],
+    )
+    FakeAsyncSession.error = None
+    FakeAsyncSession.emit_content = True
+
+    with patch.object(curl_cffi_client_module, "AsyncSession", FakeAsyncSession):
+        response = asyncio.run(
+            CurlCffiClient().fetch(
+                request,
+                impersonate="chrome",
+                download_size_limit=1024,
+            )
+        )
+
+    diagnostic = response._qd_failure_diagnostic
+    assert FakeAsyncSession.request_kwargs["impersonate"] == "chrome"
+    assert "Cloudflare challenge/WAF" in diagnostic
+    assert "cf-mitigated=challenge" in diagnostic
+    assert "secret" not in diagnostic
+
+
+def test_application_json_403_is_classified_as_login_state_problem():
+    request = make_request()
+    FakeAsyncSession.response = FakeCurlResponse(
+        status_code=403,
+        reason="Forbidden",
+        content=b'{"success":false,"message":"login required"}',
+        headers=[("Content-Type", "application/json")],
+    )
+    FakeAsyncSession.error = None
+    FakeAsyncSession.emit_content = True
+
+    with patch.object(curl_cffi_client_module, "AsyncSession", FakeAsyncSession):
+        response = asyncio.run(
+            CurlCffiClient().fetch(
+                request,
+                impersonate="chrome146",
+                download_size_limit=1024,
+            )
+        )
+
+    assert "NodeSeek application/auth" in response._qd_failure_diagnostic
+
+
+def test_rule_failure_appends_transport_diagnostic():
+    request = make_request()
+    response = make_tornado_response(request, code=403, body=b"forbidden")
+    response._qd_failure_diagnostic = "category=Cloudflare edge rejection"
+    fetcher = Fetcher.__new__(Fetcher)
+    fetcher.jinja_env = fetcher_module.Environment()
+    rule = {
+        "success_asserts": [{"re": "^200$", "from": "status"}],
+        "failed_asserts": [{"re": "^403$", "from": "status"}],
+        "extract_variables": [],
+    }
+
+    success, message = fetcher.run_rule(
+        response,
+        rule,
+        {"variables": {}, "session": []},
+    )
+
+    assert success is False
+    assert "Response Diagnostic : category=Cloudflare edge rejection" in message
 
 
 def test_unknown_impersonate_is_rejected_before_request():

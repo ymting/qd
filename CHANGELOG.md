@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Nothing right now.
 
+## [20260716.1] - 2026.07.16 更新
+
+### Changed
+
+1. NodeSeek HAR 的浏览器指纹改为任务变量 `browser_fingerprint_默认chrome`，留空默认使用 `curl_cffi` 当前 Chrome 指纹，不再固定 Chrome 110。
+2. 新增 `browser_user_agent_默认auto`；默认由 `curl_cffi` 生成与指纹成套的 UA 和 Client Hints，避免旧 Edge UA 与新 Chrome 指纹混用。
+3. 浏览器指纹传输支持 `chrome` 以及 Chrome 110、124、131、136、142、145、146 配置值。
+
+### Fixed
+
+1. 修复只修改 User-Agent、底层仍使用旧 Chrome 110 TLS/HTTP2 指纹导致配置混搭的问题。
+2. 401、403、429 失败日志增加脱敏响应分类，可区分 Cloudflare challenge、Cloudflare 边缘拒绝和 NodeSeek 登录态失效，不输出 Cookie 或认证令牌。
+
 ## [20260715.1] - 2026.07.15 更新
 
 ### Features

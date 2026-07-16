@@ -6,7 +6,7 @@
 
 ## 本 Fork 的增强
 
-- HAR 请求可通过内部头 `X-QD-Impersonate: chrome110` 选择 `curl_cffi` 浏览器指纹传输。
+- HAR 请求可通过内部头 `X-QD-Impersonate` 选择 `curl_cffi` 浏览器指纹传输。
 - 未设置内部头的请求继续使用 QD 原有 Tornado/PyCurl 链路，现有模板行为不变。
 - 内部头只负责 QD 请求路由，发送到目标网站前会被删除。
 - 提供适配 NodeSeek 当前 Cloudflare/TLS 环境的 Cookie 签到 HAR。
@@ -19,13 +19,13 @@
 固定版本部署：
 
 ```bash
-docker pull ghcr.io/ymting/qd:20260715.1
+docker pull ghcr.io/ymting/qd:20260716.1
 docker run -d \
   --name qd \
   --restart unless-stopped \
   -p 8923:80 \
   -v "$PWD/config:/usr/src/app/config" \
-  ghcr.io/ymting/qd:20260715.1
+  ghcr.io/ymting/qd:20260716.1
 ```
 
 需要自动跟随最新正式版本时，将镜像改为：
@@ -38,7 +38,7 @@ ghcr.io/ymting/qd:latest
 
 当前 Fork 镜像只支持 64 位 x86，即 Docker 平台 `linux/amd64`。
 
-仓库自带的 Compose 配置默认使用固定版本 `20260715.1`：
+仓库自带的 Compose 配置默认使用固定版本 `20260716.1`：
 
 ```bash
 docker compose up -d
@@ -54,7 +54,7 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 
 | 标签 | 用途 |
 | --- | --- |
-| `ghcr.io/ymting/qd:20260715.1` | 本次正式发布版本，推荐生产环境固定使用 |
+| `ghcr.io/ymting/qd:20260716.1` | 本次正式发布版本，推荐生产环境固定使用 |
 | `ghcr.io/ymting/qd:latest` | 最新正式版本，发布新版本时更新 |
 | `ghcr.io/ymting/qd:sha-<提交短哈希>` | 精确对应源码提交，便于定位和回滚 |
 
@@ -77,7 +77,31 @@ QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 
 不要填写布尔值 `true` 或 `false`。模板会自行把 `fixed` 和 `random` 转换为 NodeSeek 接口需要的参数。
 
-模板中的 `X-QD-Impersonate: chrome110` 是本 Fork 使用的内部路由标记，已经配置完成，用户无需修改。重复签到返回 HTTP 500 和“今天已完成签到”时，模板会将其识别为正常完成。
+模板还提供两个浏览器指纹变量：
+
+- `browser_fingerprint_默认chrome`：留空或填 `chrome`，使用当前镜像中 `curl_cffi` 的最新 Chrome 指纹；也可填 `chrome136`、`chrome142`、`chrome145` 或 `chrome146`。
+- `browser_user_agent_默认auto`：留空或填 `auto`，由 `curl_cffi` 生成与指纹成套的默认 UA 和 Client Hints；只有确需匹配浏览器现有 `cf_clearance` 时，才填写该浏览器的完整 UA。
+
+模板中的 `X-QD-Impersonate` 是本 Fork 使用的内部路由标记，发送到 NodeSeek 前会被删除。重复签到返回 HTTP 500 和“今天已完成签到”时，模板会将其识别为正常完成。
+
+### NodeSeek 403 排障
+
+`HTTP 403` 表示 TLS 请求已经成功到达网站，但 Cloudflare 或 NodeSeek 拒绝了当前请求。即使浏览器和容器的公网 IP、UA 完全相同，浏览器重新验证后自动更新的 `cf_clearance` 也不会同步到 QD；隔夜 Cookie、修改密码后的旧 Cookie、过期的 `session`/`pjwt` 都可能导致 403。
+
+按以下顺序处理：
+
+1. 在同一浏览器配置文件中重新打开 NodeSeek，确认已登录并完成人机验证。
+2. 在开发者工具的网络面板中确认 `/api/account/credit/page-1` 返回 200。
+3. 立即复制该请求当前的完整 Cookie，整体覆盖 QD 任务变量 `cookie`，不要只替换其中一个字段。
+4. 保持指纹和 UA 为默认 `chrome` + `auto`，立即手动运行一次 QD 任务。
+
+从 `20260716.1` 开始，失败日志会增加脱敏的 `Response Diagnostic`：
+
+- `Cloudflare challenge/WAF`：重新完成人机验证并更新完整 Cookie。
+- `Cloudflare edge rejection`：更新 `cf_clearance`，并检查浏览器指纹与 UA 是否成套。
+- `NodeSeek application/auth`：NodeSeek 登录态失效，重新登录后更新完整 Cookie。
+
+诊断日志不会输出请求 Cookie 或认证令牌。不要删除模板对 401/403/429 的失败断言，也不要把 403 当作签到成功。
 
 ## Cookie 与验证边界
 

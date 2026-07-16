@@ -31,185 +31,123 @@
   <link rel="stylesheet" href="C:\Users\tingyu\.codex\skills\huashu-md-html\templates\report\theme.css" />
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">NodeSeek HAR 浏览器指纹传输设计</h1>
-</header>
-<h2 id="ïîä³¾">ÏîÄ¿±³¾°</h2>
-<p>NodeSeek µÄÇ©µ½ÈÔÊÊºÏÓÃ QD HAR Ä£°å±í´ï£ºÄ£°å¸ºÔð Cookie
-±äÁ¿¡¢¹Ì¶¨»òËæ»úÇ©µ½Ä£Ê½¡¢ÇëÇó¶ÏÑÔºÍÈÕÖ¾ÌáÈ¡¡£µ±Ç°Ê§°Üµã²»ÔÚ HAR£¬¶øÔÚ
-QD µÄµ×²ãÇëÇó´«Êä¡£ÆÕÍ¨ PyCurl ÇëÇó±» Cloudflare ¾Ü¾ø£¬ÏÖÓÐ JA3 ¾µÏñÓÖÔÚ
-TLS ÎÕÊÖ½×¶Î·µ»Ø
-<code>HTTP 599 quictls SSL_connect: SSL_ERROR_SYSCALL</code>¡£</p>
-<p>Êµ²â <code>curl_cffi</code> Ê¹ÓÃ Chrome 110 Ö¸ÎÆºÍÆ¥ÅäµÄä¯ÀÀÆ÷
-User-Agent ¿ÉÒÔ·ÃÎÊ NodeSeek¡£Òò´Ë±¾Éè¼ÆÎª QD
-Ôö¼Ó°´ÇëÇóÆôÓÃµÄä¯ÀÀÆ÷Ö¸ÎÆ´«Êä£¬Í¬Ê±±£ÁôÔ­ÓÐ HAR Ö´ÐÐÁ÷³Ì¡£</p>
-<h2 id="äê">Ä¿±ê</h2>
-<ol type="1">
-<li>NodeSeek ¼ÌÐøÊ¹ÓÃ±ê×¼ HAR Ä£°å£¬²»ÒýÈë¶ÀÁ¢Ç©µ½·þÎñ¡£</li>
-<li>Ö»ÓÐÃ÷È·±ê¼ÇµÄÇëÇóÊ¹ÓÃ
-<code>curl_cffi</code>£¬ÆäËûÄ£°åÐÐÎª±£³Ö²»±ä¡£</li>
-<li><code>curl_cffi</code> ÏìÓ¦¼ÌÐø½øÈë QD Ô­ÓÐµÄ
-Cookie¡¢±äÁ¿¡¢¶ÏÑÔºÍÈÕÖ¾´¦ÀíÁ´Â·¡£</li>
-<li>GitHub Actions Îª <code>linux/amd64</code> ¹¹½¨²¢·¢²¼ GHCR
-¾µÏñ¡£</li>
-<li>Ê×´Î·¢²¼°æ±¾Îª
-<code>20260715.1</code>£¬Í¬Ò»¾µÏñÍ¬Ê±´ø°æ±¾¡¢<code>latest</code>
-ºÍÌá½»¹þÏ£±êÇ©¡£</li>
-<li>ÕæÊµ Cookie¡¢<code>pjwt</code>¡¢<code>cf_clearance</code>
-µÈÈÏÖ¤ÐÅÏ¢²»½øÈë´úÂë¡¢Ä£°å¡¢ÈÕÖ¾¡¢²âÊÔ»ò Release¡£</li>
+<h1>NodeSeek HAR 浏览器指纹传输设计</h1>
+<h2>项目背景</h2>
+<p>NodeSeek 的签到仍适合用 QD HAR 模板表达：模板负责 Cookie 变量、固定或随机签到模式、请求断言和日志提取。当前失败点不在 HAR，而在 QD 的底层请求传输。普通 PyCurl 请求被 Cloudflare 拒绝，现有 JA3 镜像又在 TLS 握手阶段返回 <code>HTTP 599 quictls SSL_connect: SSL_ERROR_SYSCALL</code>。</p>
+<p>实测 <code>curl_cffi</code> 使用 Chrome 110 指纹和匹配的浏览器 User-Agent 可以访问 NodeSeek。因此本设计为 QD 增加按请求启用的浏览器指纹传输，同时保留原有 HAR 执行流程。</p>
+<h2>目标</h2>
+<ol>
+<li>NodeSeek 继续使用标准 HAR 模板，不引入独立签到服务。</li>
+<li>只有明确标记的请求使用 <code>curl_cffi</code>，其他模板行为保持不变。</li>
+<li><code>curl_cffi</code> 响应继续进入 QD 原有的 Cookie、变量、断言和日志处理链路。</li>
+<li>GitHub Actions 为 <code>linux/amd64</code> 构建并发布 GHCR 镜像。</li>
+<li>首次发布版本为 <code>20260715.1</code>，同一镜像同时带版本、<code>latest</code> 和提交哈希标签。</li>
+<li>真实 Cookie、<code>pjwt</code>、<code>cf_clearance</code> 等认证信息不进入代码、模板、日志、测试或 Release。</li>
 </ol>
-<h2 id="çäê">·ÇÄ¿±ê</h2>
+<h2>非目标</h2>
 <ul>
-<li>²»Ìæ»» QD µÄÈ«¾Ö HTTP ¿Í»§¶Ë¡£</li>
-<li>²»ÊµÏÖ NodeSeek ÕËºÅÃÜÂëµÇÂ¼»ò Cloudflare ÈË»úÑéÖ¤¡£</li>
-<li>²»³ÐÅµ 32 Î» x86¡¢32 Î» ARM »òÆäËûÎ´Ìá¹© <code>curl_cffi</code>
-Ô¤±àÒë°üµÄÆ½Ì¨¡£</li>
-<li>²»ÐÞ¸ÄÆäËûÕ¾µã HAR µÄÄ¬ÈÏÐÐÎª¡£</li>
+<li>不替换 QD 的全局 HTTP 客户端。</li>
+<li>不实现 NodeSeek 账号密码登录或 Cloudflare 人机验证。</li>
+<li>不承诺 32 位 x86、32 位 ARM 或其他未提供 <code>curl_cffi</code> 预编译包的平台。</li>
+<li>不修改其他站点 HAR 的默认行为。</li>
 </ul>
-<h2 id="è½ï">·½°¸±È½Ï</h2>
-<h3 id="aºhar-çëçóñôñêä²éóã">·½°¸ A£ºHAR °´ÇëÇóÑ¡Ôñ´«Êä£¨²ÉÓÃ£©</h3>
-<p>HAR ÇëÇóÔö¼Ó QD ÄÚ²¿ÇëÇóÍ·
-<code>X-QD-Impersonate: chrome110</code>¡£QD
-½âÎöºóÉ¾³ý¸ÃÇëÇóÍ·£¬²¢°ÑÇëÇó½»¸ø
-<code>curl_cffi</code>¡£¸Ã·½Ê½¸Ä¶¯·¶Î§ÓÐÏÞ£¬NodeSeek ¿ÉÒÔ»ñµÃä¯ÀÀÆ÷ TLS
-Ö¸ÎÆ£¬ÆäËûÄ£°åÈÔÊ¹ÓÃÔ­´«Êä¡£</p>
-<h3 id="bºè¾öìæîª-curl_cffi">·½°¸ B£ºÈ«¾ÖÌæ»»Îª
-<code>curl_cffi</code></h3>
-<p>ÊµÏÖÈë¿Ú¸üÉÙ£¬µ«»á¸Ä±äËùÓÐÄ£°åµÄÖØ¶¨Ïò¡¢´úÀí¡¢Cookie
-ºÍÒì³£ÐÐÎª£¬»Ø¹é·çÏÕ¹ý´ó¡£</p>
-<h3 id="cºàá-nodeseek-½å¾òþîñ">·½°¸ C£º¶ÀÁ¢ NodeSeek ½Å±¾»ò·þÎñ</h3>
-<p>¿ÉÒÔÈÆ¹ý QD ÇëÇó²ã£¬µ«»áÍÑÀë HAR
-µÄ±äÁ¿¡¢ÈÕÖ¾ºÍÈÎÎñ¹ÜÀí£¬²»·ûºÏ±¾ÏîÄ¿Ä¿±ê¡£</p>
-<h2 id="ü¹¹éè¼æ">¼Ü¹¹Éè¼Æ</h2>
-<h3 id="çëçóâóé">ÇëÇóÂ·ÓÉ</h3>
-<p><code>Fetcher.build_request()</code> ¼ÌÐø¹¹Ôì Tornado
-<code>HTTPRequest</code>¡£ÇëÇóÖ´ÐÐÇ°¼ì²éÄÚ²¿Í·
-<code>X-QD-Impersonate</code>£º</p>
+<h2>方案比较</h2>
+<h3>方案 A：HAR 按请求选择传输（采用）</h3>
+<p>HAR 请求增加 QD 内部请求头 <code>X-QD-Impersonate: chrome110</code>。QD 解析后删除该请求头，并把请求交给 <code>curl_cffi</code>。该方式改动范围有限，NodeSeek 可以获得浏览器 TLS 指纹，其他模板仍使用原传输。</p>
+<h3>方案 B：全局替换为 <code>curl_cffi</code></h3>
+<p>实现入口更少，但会改变所有模板的重定向、代理、Cookie 和异常行为，回归风险过大。</p>
+<h3>方案 C：独立 NodeSeek 脚本或服务</h3>
+<p>可以绕过 QD 请求层，但会脱离 HAR 的变量、日志和任务管理，不符合本项目目标。</p>
+<h2>架构设计</h2>
+<h3>请求路由</h3>
+<p><code>Fetcher.build_request()</code> 继续构造 Tornado <code>HTTPRequest</code>。请求执行前检查内部头 <code>X-QD-Impersonate</code>：</p>
 <ul>
-<li>Î´ÉèÖÃ£ºÑØÓÃ <code>AsyncHTTPClient.fetch()</code>¡£</li>
-<li>ÖµÎª <code>chrome110</code>£ºÉ¾³ýÄÚ²¿Í·£¬µ÷ÓÃÐÂµÄ
-<code>curl_cffi</code> ÊÊÅäÆ÷¡£</li>
-<li>Öµ²»ÊÜÖ§³Ö£º·µ»ØÃ÷È·µÄÅäÖÃ´íÎó£¬²»»ØÍËµ½ÆÕÍ¨´«Êä¡£</li>
+<li>未设置：沿用 <code>AsyncHTTPClient.fetch()</code>。</li>
+<li>值为 <code>chrome110</code>：删除内部头，调用新的 <code>curl_cffi</code> 适配器。</li>
+<li>值不受支持：返回明确的配置错误，不回退到普通传输。</li>
 </ul>
-<p>ÄÚ²¿Í·Ö»ÓÃÓÚ QD
-Â·ÓÉ£¬²»·¢ËÍµ½Ä¿±êÍøÕ¾£¬Ò²²»×÷ÎªÏìÓ¦ÈÕÖ¾ÖÐµÄÕ¾µãÇëÇóÍ·Õ¹Ê¾¡£</p>
-<h3 id="êêåäæß½ç">ÊÊÅäÆ÷±ß½ç</h3>
-<p>ÐÂÔö <code>libs/curl_cffi_client.py</code>£¬Ö°ÔðÏÞ¶¨Îª£º</p>
-<ol type="1">
-<li>½« Tornado <code>HTTPRequest</code> Ó³ÉäÎª
-<code>curl_cffi.requests.AsyncSession</code> ÇëÇó¡£</li>
-<li>´«µÝ·½·¨¡¢URL¡¢ÇëÇóÍ·¡¢ÇëÇóÌå¡¢Á¬½Ó³¬Ê±¡¢×Ü³¬Ê±ºÍ´úÀíÅäÖÃ¡£</li>
-<li>±£³Ö QD µ±Ç°µÄ²»×Ô¶¯ÖØ¶¨ÏòºÍÖ¤ÊéÐ£Ñé²ßÂÔ¡£</li>
-<li>Ö´ÐÐ Chrome 110 ä¯ÀÀÆ÷Ö¸ÎÆÄ£Äâ¡£</li>
-<li>½«ÏìÓ¦×´Ì¬¡¢Ô­Òò¡¢ÏìÓ¦Í·ºÍÏìÓ¦Ìå×ª»»Îª Tornado
-<code>HTTPResponse</code>¡£</li>
-<li>Ö´ÐÐÏÂÔØ´óÐ¡ÏÞÖÆ£¬±ÜÃâä¯ÀÀÆ÷Ö¸ÎÆ´«ÊäÈÆ¹ý QD µÄ×ÊÔ´Ô¼Êø¡£</li>
+<p>内部头只用于 QD 路由，不发送到目标网站，也不作为响应日志中的站点请求头展示。</p>
+<h3>适配器边界</h3>
+<p>新增 <code>libs/curl_cffi_client.py</code>，职责限定为：</p>
+<ol>
+<li>将 Tornado <code>HTTPRequest</code> 映射为 <code>curl_cffi.requests.AsyncSession</code> 请求。</li>
+<li>传递方法、URL、请求头、请求体、连接超时、总超时和代理配置。</li>
+<li>保持 QD 当前的不自动重定向和证书校验策略。</li>
+<li>执行由 <code>X-QD-Impersonate</code> 指定的 Chrome 浏览器指纹模拟；NodeSeek 模板默认使用 <code>chrome</code> 别名。</li>
+<li>将响应状态、原因、响应头和响应体转换为 Tornado <code>HTTPResponse</code>。</li>
+<li>执行下载大小限制，避免浏览器指纹传输绕过 QD 的资源约束。</li>
 </ol>
-<p>ÊÊÅäÆ÷·µ»Ø Tornado <code>HTTPResponse</code> ºó£¬ºóÐøÈÔÓÉÏÖÓÐ
-<code>Fetcher</code> ¸ºÔð Cookie ºÏ²¢¡¢±àÂëÅÐ¶Ï¡¢HAR
-ÏìÓ¦Éú³É¡¢¶ÏÑÔºÍ±äÁ¿ÌáÈ¡¡£</p>
-<h3 id="nodeseek-har">NodeSeek HAR</h3>
-<p>NodeSeek
-Ä£°åµÄÇ©µ½ÇëÇóºÍ»ý·Ö¼ÇÂ¼ÇëÇó¶¼Ìí¼ÓÄÚ²¿Ö¸ÎÆÍ·¡£Ä£°å¼ÌÐøÌá¹©ÈÎÎñ±äÁ¿£º</p>
+<p>适配器返回 Tornado <code>HTTPResponse</code> 后，后续仍由现有 <code>Fetcher</code> 负责 Cookie 合并、编码判断、HAR 响应生成、断言和变量提取。</p>
+<h3>NodeSeek HAR</h3>
+<p>NodeSeek 模板的签到请求和积分记录请求都添加内部指纹头。模板继续提供任务变量：</p>
 <ul>
-<li><code>fixed</code>£ºÇëÇó
-<code>POST /api/attendance?random=false</code>£¬¹Ì¶¨»ñµÃ 5 »ý·Ö¡£</li>
-<li><code>random</code>£ºÇëÇó
-<code>POST /api/attendance?random=true</code>£¬»ñµÃËæ»ú»ý·Ö¡£</li>
-<li>Áô¿Õ£ºÄ¬ÈÏÊ¹ÓÃ <code>fixed</code>¡£</li>
+<li><code>fixed</code>：请求 <code>POST /api/attendance?random=false</code>，固定获得 5 积分。</li>
+<li><code>random</code>：请求 <code>POST /api/attendance?random=true</code>，获得随机积分。</li>
+<li>留空：默认使用 <code>fixed</code>。</li>
 </ul>
-<p>ÖØ¸´Ç©µ½·µ»Ø HTTP 500 ºÍ¡°½ñÌìÒÑÍê³ÉÇ©µ½¡±Ê±£¬ÈÔÓÉ HAR
-¶ÏÑÔ½«ÆäÊ¶±ðÎªÕý³£Íê³É¡£</p>
-<h2 id="íîóàí">´íÎó´¦Àí</h2>
+<p>重复签到返回 HTTP 500 和“今天已完成签到”时，仍由 HAR 断言将其识别为正常完成。</p>
+<h2>错误处理</h2>
 <ul>
-<li>Î´°²×°
-<code>curl_cffi</code>£ºÖ»ÓÐÆôÓÃÖ¸ÎÆ´«ÊäµÄÇëÇóÊ§°Ü£¬²¢ÌáÊ¾¾µÏñ»òÒÀÀµÈ±Ê§£»QD
-·þÎñ±¾ÉíÈÔ¿ÉÆô¶¯¡£</li>
-<li>Ö¸ÎÆÖµ²»ÊÜÖ§³Ö£º·µ»Ø°üº¬¸ÃÖµµÄÅäÖÃ´íÎó£¬±ÜÃâ¾²Ä¬Ê¹ÓÃ´íÎó TLS
-Ö¸ÎÆ¡£</li>
-<li>TLS¡¢Á¬½Ó»ò³¬Ê±Òì³££º×ª»»Îª QD ¿É¼ÇÂ¼µÄ HTTP 599
-ÏìÓ¦£¬±£Áô¿ÉÕï¶ÏµÄÒì³£ÐÅÏ¢¡£</li>
-<li>ÏìÓ¦³¬¹ýÏÂÔØÏÞÖÆ£ºÖÕÖ¹¶ÁÈ¡²¢·µ»ØÃ÷È·µÄ´óÐ¡ÏÞÖÆ´íÎó¡£</li>
-<li>NodeSeek Cookie
-Ê§Ð§£ºÓÉÄ£°åµÇÂ¼Ð£Ñé»ò½Ó¿ÚÏìÓ¦¶ÏÑÔ±¨¸æ£¬²»³¢ÊÔ×Ô¶¯µÇÂ¼»òÈÆ¹ýÑéÖ¤¡£</li>
+<li>未安装 <code>curl_cffi</code>：只有启用指纹传输的请求失败，并提示镜像或依赖缺失；QD 服务本身仍可启动。</li>
+<li>指纹值不受支持：返回包含该值的配置错误，避免静默使用错误 TLS 指纹。</li>
+<li>TLS、连接或超时异常：转换为 QD 可记录的 HTTP 599 响应，保留可诊断的异常信息。</li>
+<li>响应超过下载限制：终止读取并返回明确的大小限制错误。</li>
+<li>NodeSeek Cookie 失效：由模板登录校验或接口响应断言报告，不尝试自动登录或绕过验证。</li>
+<li>401、403、429 响应：只根据 Server、Content-Type、cf-mitigated 和正文标记生成脱敏分类，不记录请求 Cookie、Authorization 或完整响应正文。</li>
 </ul>
-<p>ºËÐÄÂ·ÓÉºÍÒì³£×ª»»´¦Ìí¼ÓÖÐÎÄ×¢ÊÍ£¬ËµÃ÷ÄÚ²¿ÇëÇóÍ·µÄ°²È«±ß½çÒÔ¼°ÏìÓ¦ÊÊÅäÔ­Òò¡£</p>
-<h2 id="docker-óë-github-²¼">Docker Óë GitHub ·¢²¼</h2>
-<p>ÐÂÔö fork ×¨ÓÃ Dockerfile£¬Ö±½Ó¸´ÖÆ GitHub Actions
-¼ì³öµÄ±¾²Ö¿â´úÂë¡£²»ÄÜÑØÓÃµ±Ç° Dockerfile ÔÚ¹¹½¨½×¶Î´Ó Gitee
-¿ËÂ¡ÉÏÓÎµÄ×ö·¨£¬·ñÔò fork ÐÞ¸Ä»á±»¸²¸Ç¡£</p>
-<p>ÐÂÔö GHCR ·¢²¼¹¤×÷Á÷£º</p>
+<p>核心路由和异常转换处添加中文注释，说明内部请求头的安全边界以及响应适配原因。</p>
+<h2>Docker 与 GitHub 发布</h2>
+<p>新增 fork 专用 Dockerfile，直接复制 GitHub Actions 检出的本仓库代码。不能沿用当前 Dockerfile 在构建阶段从 Gitee 克隆上游的做法，否则 fork 修改会被覆盖。</p>
+<p>新增 GHCR 发布工作流：</p>
 <ul>
-<li>´¥·¢Ìõ¼þ£ºGitHub Release ·¢²¼£¬Ò²Ö§³ÖÊÖ¶¯´¥·¢ÓÃÓÚÑéÖ¤¡£</li>
-<li>¹¹½¨Æ½Ì¨£º½ö <code>linux/amd64</code>¡£</li>
-<li>·¢²¼µØÖ·£º<code>ghcr.io/ymting/qd</code>¡£</li>
-<li>È¨ÏÞ£ºÊ¹ÓÃ²Ö¿â×Ô´ø <code>GITHUB_TOKEN</code> µÄ
-<code>packages: write</code>£¬²»ÐèÒª Docker Hub ÃÜÔ¿¡£</li>
-<li>¹¹½¨²ßÂÔ£ºÒ»´Î Buildx ¹¹½¨ºÍÒ»´Î¾µÏñ²ãÉÏ´«£¬Í¬Ê±Ð´Èë¶à¸ö±êÇ©¡£</li>
+<li>触发条件：GitHub Release 发布，也支持手动触发用于验证。</li>
+<li>构建平台：仅 <code>linux/amd64</code>。</li>
+<li>发布地址：<code>ghcr.io/ymting/qd</code>。</li>
+<li>权限：使用仓库自带 <code>GITHUB_TOKEN</code> 的 <code>packages: write</code>，不需要 Docker Hub 密钥。</li>
+<li>构建策略：一次 Buildx 构建和一次镜像层上传，同时写入多个标签。</li>
 </ul>
-<p>°æ±¾ <code>20260715.1</code> ·¢²¼ºóµÄ±êÇ©Îª£º</p>
-<pre class="text"><code>ghcr.io/ymting/qd:20260715.1
+<p>版本 <code>20260715.1</code> 发布后的标签为：</p>
+<pre><code class="language-text">ghcr.io/ymting/qd:20260715.1
 ghcr.io/ymting/qd:latest
-ghcr.io/ymting/qd:sha-&lt;Ìá½»¶Ì¹þÏ£&gt;</code></pre>
-<p>Èý¸ö±êÇ©ÒýÓÃÍ¬Ò»¾µÏñÇåµ¥£¬²»ÖØ¸´¹¹½¨£¬Ò²²»»á°Ñ¾µÏñ²ã´æ´¢À©´óÈý±¶¡£</p>
-<h2 id="readme-óëéïóî¹éµµ">README ÓëÉÏÓÎ¹éµµ</h2>
-<p>µ±Ç°¸ù README µÄ»ÕÕÂ¡¢¹¤×÷Á÷¡¢¾µÏñµØÖ·ºÍ´ó²¿·ÖÁ´½Ó¶¼Ö¸Ïò
-<code>qd-today/qd</code>£¬¼ÌÐø×÷Îª fork
-Ê×Ò³»áÈÃÊ¹ÓÃÕßÎóÒÔÎª¹¹½¨×´Ì¬ºÍ¾µÏñÊôÓÚ±¾²Ö¿â¡£</p>
-<p>·¢²¼Ç°Ö´ÐÐÒÔÏÂÕûÀí£º</p>
-<ol type="1">
-<li>½«µ±Ç°ÉÏÓÎ README ÍêÕû¹éµµÎª
-<code>docs/archive/upstream-readme-20260715.md</code>£¬²¢Éú³ÉÍ¬Ä¿Â¼ HTML
-ÔÄ¶Á°æ¡£</li>
-<li>ÐÂµÄ¸ù README Ã÷È·ËµÃ÷±¾ÏîÄ¿»ùÓÚ
-<code>qd-today/qd</code>£¬Ìá¹©ÉÏÓÎ²Ö¿âºÍ¹éµµ README µÄ³¬Á´½Ó¡£</li>
-<li>Ê×Ò³Ö»Õ¹Ê¾ <code>ymting/qd</code> µÄÕæÊµ×´Ì¬¡¢GHCR
-¾µÏñµØÖ·¡¢<code>linux/amd64</code> Ô¼Êø¡¢NodeSeek HAR
-Ê¹ÓÃ·½Ê½ºÍ°²È«×¢ÒâÊÂÏî¡£</li>
-<li>É¾³ý»òÌæ»»Ö¸ÏòÉÏÓÎ¹¹½¨×´Ì¬¡¢Docker Hub
-¾µÏñºÍ²Ö¿âÍ³¼ÆµÄÎóµ¼»ÕÕÂ¡£</li>
-<li>±£Áô MIT Ðí¿ÉÖ¤¡¢Ô­×÷ÕßºÍ¹±Ï×Õß¹éÊô£»ÍêÕû¹±Ï×ÕßÃûµ¥¼ÌÐø±£´æÔÚ¹éµµ
-README ÖÐ¡£</li>
-<li>¸ù README ¸üÐÂºóÉú³É <code>docs/README.html</code>£¬Âú×ãÏîÄ¿µÄ
-Markdown/HTML ÎÄµµÁ÷Ë®ÏßÒªÇó¡£</li>
+ghcr.io/ymting/qd:sha-&lt;提交短哈希&gt;
+</code></pre>
+<p>三个标签引用同一镜像清单，不重复构建，也不会把镜像层存储扩大三倍。</p>
+<h2>README 与上游归档</h2>
+<p>当前根 README 的徽章、工作流、镜像地址和大部分链接都指向 <code>qd-today/qd</code>，继续作为 fork 首页会让使用者误以为构建状态和镜像属于本仓库。</p>
+<p>发布前执行以下整理：</p>
+<ol>
+<li>将当前上游 README 完整归档为 <code>docs/archive/upstream-readme-20260715.md</code>，并生成同目录 HTML 阅读版。</li>
+<li>新的根 README 明确说明本项目基于 <code>qd-today/qd</code>，提供上游仓库和归档 README 的超链接。</li>
+<li>首页只展示 <code>ymting/qd</code> 的真实状态、GHCR 镜像地址、<code>linux/amd64</code> 约束、NodeSeek HAR 使用方式和安全注意事项。</li>
+<li>删除或替换指向上游构建状态、Docker Hub 镜像和仓库统计的误导徽章。</li>
+<li>保留 MIT 许可证、原作者和贡献者归属；完整贡献者名单继续保存在归档 README 中。</li>
+<li>根 README 更新后生成 <code>docs/README.html</code>，满足项目的 Markdown/HTML 文档流水线要求。</li>
 </ol>
-<p>ÐÂµÄ¸ù README
-ÖÁÉÙ°üº¬£ºÏîÄ¿¶¨Î»¡¢ÓëÉÏÓÎµÄ¹ØÏµ¡¢±¾´ÎÔöÇ¿¡¢¾µÏñÀ­È¡ÓëÆô¶¯Ê¾Àý¡¢¾µÏñ±êÇ©ËµÃ÷¡¢NodeSeek
-HAR ÅäÖÃ¡¢Cookie °²È«ÌáÊ¾¡¢ÎÄµµÁ´½Ó¡¢¸üÐÂÓë»Ø¹ö¡¢Ðí¿ÉÖ¤ºÍÖÂÐ»¡£</p>
-<h2 id="âêôóëñéêõ">²âÊÔÓëÑéÊÕ</h2>
-<h3 id="ô²âêô">×Ô¶¯²âÊÔ</h3>
-<ol type="1">
-<li>ÎÞÄÚ²¿Ö¸ÎÆÍ·Ê±ÈÔµ÷ÓÃÔ­ Tornado/PyCurl ¿Í»§¶Ë¡£</li>
-<li><code>chrome110</code> ±ê¼ÇÕýÈ·Â·ÓÉµ½ <code>curl_cffi</code>¡£</li>
-<li>ÄÚ²¿ÇëÇóÍ·ÔÚ·¢ËÍÇ°±»É¾³ý¡£</li>
-<li>·½·¨¡¢URL¡¢ÇëÇóÍ·¡¢ÇëÇóÌå¡¢³¬Ê±ºÍ´úÀíÓ³ÉäÕýÈ·¡£</li>
-<li><code>curl_cffi</code> ÏìÓ¦ÕýÈ·×ª»»Îª Tornado
-<code>HTTPResponse</code>¡£</li>
-<li>È±ÉÙÒÀÀµ¡¢Î´ÖªÖ¸ÎÆ¡¢TLS Òì³£ºÍÏÂÔØ³¬ÏÞ¾ù²úÉúÃ÷È·´íÎó¡£</li>
-<li>ÏÖÓÐ HAR ÏìÓ¦¡¢Cookie ºÍ¶ÏÑÔ´¦Àí¼ÌÐø¹¤×÷¡£</li>
-<li>README¡¢¹éµµ README ºÍ NodeSeek HAR ÖÐ²»´æÔÚÕæÊµ Cookie
-»òÈÏÖ¤ÁîÅÆ¡£</li>
+<p>新的根 README 至少包含：项目定位、与上游的关系、本次增强、镜像拉取与启动示例、镜像标签说明、NodeSeek HAR 配置、Cookie 安全提示、文档链接、更新与回滚、许可证和致谢。</p>
+<h2>测试与验收</h2>
+<h3>自动测试</h3>
+<ol>
+<li>无内部指纹头时仍调用原 Tornado/PyCurl 客户端。</li>
+<li><code>chrome</code>、<code>chrome110</code> 和受支持的较新 Chrome 标记正确路由到 <code>curl_cffi</code>。</li>
+<li>内部请求头在发送前被删除。</li>
+<li>方法、URL、请求头、请求体、超时和代理映射正确。</li>
+<li><code>curl_cffi</code> 响应正确转换为 Tornado <code>HTTPResponse</code>。</li>
+<li>缺少依赖、未知指纹、TLS 异常和下载超限均产生明确错误。</li>
+<li>现有 HAR 响应、Cookie 和断言处理继续工作。</li>
+<li>README、归档 README 和 NodeSeek HAR 中不存在真实 Cookie 或认证令牌。</li>
 </ol>
-<h3 id="ëµ½ëñéêõ">¶Ëµ½¶ËÑéÊÕ</h3>
-<ol type="1">
-<li>Ê¹ÓÃ»·¾³±äÁ¿ÁÙÊ±×¢ÈëÓÐÐ§ NodeSeek Cookie£¬²»Ð´ÈëÎÄ¼þ¡£</li>
-<li>ÔÚÐÞ¸ÄºóµÄ QD Fetcher ÖÐÖ´ÐÐ NodeSeek HAR¡£</li>
-<li>ÑéÖ¤¹Ì¶¨Ä£Ê½ÇëÇó <code>random=false</code>£¬Ëæ»úÄ£Ê½ÇëÇó
-<code>random=true</code>¡£</li>
-<li>ÑéÖ¤Ê×´ÎÇ©µ½³É¹¦ºÍµ±ÌìÖØ¸´Ç©µ½¶¼µÃµ½ÕýÈ·ÈÎÎñ½á¹û¡£</li>
-<li>´´½¨ GitHub Release <code>20260715.1</code>¡£</li>
-<li>µÈ´ý GitHub Actions Íê³É£¬È·ÈÏÈý¸ö GHCR ±êÇ©¾ùÖ¸ÏòÍ¬Ò»¿ÉÀ­È¡µÄ
-<code>linux/amd64</code> ¾µÏñ¡£</li>
-<li>¼ì²é GitHub ÏîÄ¿Ê×Ò³µÄ README Á´½Ó¡¢GHCR
-µØÖ·ºÍÉÏÓÎ¹éµµÁ´½Ó¾ù¿ÉÓÃ¡£</li>
+<h3>端到端验收</h3>
+<ol>
+<li>使用环境变量临时注入有效 NodeSeek Cookie，不写入文件。</li>
+<li>在修改后的 QD Fetcher 中执行 NodeSeek HAR。</li>
+<li>验证固定模式请求 <code>random=false</code>，随机模式请求 <code>random=true</code>。</li>
+<li>验证首次签到成功和当天重复签到都得到正确任务结果。</li>
+<li>创建 GitHub Release <code>20260715.1</code>。</li>
+<li>等待 GitHub Actions 完成，确认三个 GHCR 标签均指向同一可拉取的 <code>linux/amd64</code> 镜像。</li>
+<li>检查 GitHub 项目首页的 README 链接、GHCR 地址和上游归档链接均可用。</li>
 </ol>
-<h2 id="óëø¹ö">·¢²¼Óë»Ø¹ö</h2>
-<p>·¢²¼Ç°¸üÐÂ <code>version.json</code> ºÍ
-<code>CHANGELOG.md</code>¡£Release ËµÃ÷Ê¹ÓÃÖÐÎÄ£¬¸ÅÀ¨ NodeSeek HAR
-ä¯ÀÀÆ÷Ö¸ÎÆÖ§³Ö¡¢¾µÏñ¼Ü¹¹ºÍÊ¹ÓÃ·½Ê½¡£</p>
-<p>Èç¹û <code>latest</code> ³öÏÖ»Ø¹é£¬¿ÉÁ¢¼´°Ñ²¿Êð¾µÏñ¹Ì¶¨µ½
-<code>20260715.1</code> »ò¶ÔÓ¦
-<code>sha-&lt;Ìá½»¶Ì¹þÏ£&gt;</code>£»ºóÐøÐÞ¸´·¢²¼ÐÂ°æ±¾ºóÔÙÒÆ¶¯
-<code>latest</code>¡£</p>
+<h2>发布与回滚</h2>
+<p>发布前更新 <code>version.json</code> 和 <code>CHANGELOG.md</code>。Release 说明使用中文，概括 NodeSeek HAR 浏览器指纹支持、镜像架构和使用方式。</p>
+<p>如果 <code>latest</code> 出现回归，可立即把部署镜像固定到 <code>20260715.1</code> 或对应 <code>sha-&lt;提交短哈希&gt;</code>；后续修复发布新版本后再移动 <code>latest</code>。</p>
 </body>
 </html>
