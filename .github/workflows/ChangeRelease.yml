@@ -20,3 +20,5 @@ jobs:
         # optional
         tag_prefix: ""
         changelog: CHANGELOG.md
+        # Fork 只同步自己维护的最近两个版本，避免扫描到未同步的上游旧标签后报错。
+        limit: 2

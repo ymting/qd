@@ -1,8 +1,9 @@
 name: Publish GHCR Image
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "20*"
   workflow_dispatch:
     inputs:
       version:
@@ -15,7 +16,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: publish-ghcr-${{ github.event.release.tag_name || inputs.version }}
+  group: publish-ghcr-${{ inputs.version || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -30,20 +31,30 @@ jobs:
     steps:
       - name: Checkout release source
         uses: actions/checkout@v4
+        with:
+          # 手动重建旧版本时也必须检出对应标签，不能误用 master 的最新源码。
+          ref: ${{ inputs.version || github.ref }}
 
       - name: Resolve image version
         id: version
         shell: bash
         env:
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_VERSION: ${{ github.ref_name }}
           MANUAL_VERSION: ${{ inputs.version }}
         run: |
-          version="${RELEASE_VERSION:-${MANUAL_VERSION}}"
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            version="${TAG_VERSION}"
+          else
+            version="${MANUAL_VERSION}"
+          fi
           if [[ ! "${version}" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
             echo "Invalid Docker image tag: ${version}" >&2
             exit 1
           fi
+          source_sha="$(git rev-parse --short=7 HEAD)"
           echo "value=${version}" >> "${GITHUB_OUTPUT}"
+          echo "sha_tag=sha-${source_sha}" >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -63,7 +74,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.value }}
             type=raw,value=latest
-            type=sha,format=short,prefix=sha-
+            type=raw,value=${{ steps.version.outputs.sha_tag }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.version.outputs.value }}
