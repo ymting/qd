@@ -1063,7 +1063,9 @@ class Fetcher(object):
                         f"Failed at {entry['idx']}/{tpl_length} request, \\r\\nError: {e}, \\r\\nRequest URL: {entry['request']['url']}"
                     ) from e
                 if not result["success"]:
+                    # 规则失败发生在请求完成后，应记录实际发送的渲染后 URL。
+                    rendered_url = result["response"].request.url
                     raise Exception(
-                        f"Failed at {entry['idx']}/{tpl_length} request, \\r\\n{result['msg']}, \\r\\nRequest URL: {entry['request']['url']}"
+                        f"Failed at {entry['idx']}/{tpl_length} request, \\r\\n{result['msg']}, \\r\\nRequest URL: {rendered_url}"
                     )
         return env, request_limit
