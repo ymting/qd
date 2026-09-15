@@ -84,6 +84,9 @@ _operations = [
 # operations on literal values
 _EXPR_OPCODES = _CONST_OPCODES.union(to_opcodes([
     'UNARY_POSITIVE', 'UNARY_NEGATIVE', 'UNARY_NOT', 'UNARY_INVERT',
+    # Python 3.13 起 `not x`、`and`/`or` 的真值判断改用 TO_BOOL 生成字节码,
+    # 只放行 UNARY_NOT 会让条件语句在新版本解释器上直接报 forbidden opcode。
+    'TO_BOOL',
     *('BINARY_' + op for op in _operations), 'BINARY_SUBSCR',
     *('INPLACE_' + op for op in _operations),
     'BUILD_SLICE',
