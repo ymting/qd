@@ -81,8 +81,17 @@ class TemplateManifestTests(unittest.TestCase):
             with self.subTest(path=item["path"]):
                 self.assertTrue(item["reason"])
 
+    def test_template_dir_contains_only_har_files(self):
+        # templates/ 只放模板资产；工具、版本清单与变更记录统一放在 tools/。
+        unexpected = sorted(
+            path.name
+            for path in (QD_DIR / "templates").iterdir()
+            if path.is_file() and path.suffix != ".har"
+        )
+        self.assertEqual([], unexpected, "templates/ 目录混入了非模板文件")
+
     def test_manifest_is_valid_json_with_expected_shape(self):
-        raw = (QD_DIR / "templates" / "manifest.json").read_text(encoding="utf-8")
+        raw = (QD_DIR / "tools" / "template_manifest.json").read_text(encoding="utf-8")
         manifest = json.loads(raw)
         self.assertEqual(1, manifest["schema"])
         self.assertIn("version_format", manifest)

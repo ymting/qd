@@ -115,18 +115,20 @@ QD_IMAGE=your-qd-fork-image:tag docker compose --profile sb-forum up -d --build
 
 ## 模板版本管理
 
+`templates/` 目录只存放 `.har` 模板资产；版本清单、变更记录和校验工具统一放在 `tools/`。
+
 QD 数据库保存的是**导入当时**的 HAR 快照，仓库里的模板更新后不会自动同步到已有任务。
 为了能回答「这个任务到底跑的是哪一版模板」，本仓库做了三件事：
 
 1. 每个模板的签到日志末尾都会输出 `（模板 v20260915.1）` 形式的版本号。
    推送消息里**看不到版本号**，就说明该任务还在运行旧模板，需要重新导入。
-2. `templates/manifest.json` 登记每个模板的版本号、SHA-256、条目数、必需变量和外层镜像状态。
+2. `tools/template_manifest.json` 登记每个模板的版本号、SHA-256、条目数、必需变量和外层镜像状态。
 3. `tools/template_manifest.py` 负责生成与校验，`tests/test_template_manifest.py` 接入测试。
 
 改动模板后按下面的顺序操作：
 
 ```bash
-# 1. 修改 templates/<模板>.har，并在 templates/CHANGELOG.md 记录行为变化
+# 1. 修改 templates/<模板>.har，并在 tools/TEMPLATE_CHANGELOG.md 记录行为变化
 # 2. 升级版本号（同时更新 updated 日期）
 python tools/template_manifest.py --set-version 吾爱破解-签到.har 20260915.2
 # 3. 把模板里的日志版本号同步改成 v20260915.2，然后重算哈希与条目数
@@ -138,6 +140,7 @@ python -m pytest tests -q
 
 清单里的 `mirror` 字段用于记录外层工作区 `templates/` 中的副本，`state` 为 `synced`
 时校验器会要求逐字节一致；仓库单独克隆看不到该目录时会自动跳过。
+`tests/test_template_manifest.py` 还会检查 `templates/` 目录里没有混入非 `.har` 文件。
 
 ## NodeSeek 签到
 

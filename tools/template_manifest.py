@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""模板版本管理工具：维护并校验 `templates/manifest.json`。
+"""模板版本管理工具：维护并校验 `tools/template_manifest.json`。
 
 QD 数据库里保存的是导入当时的 HAR 快照，仓库里的模板文件更新后不会自动同步。
 这个工具让「仓库里的模板版本」变成可机检的事实，配合模板日志里的版本号，
 就能确认某个任务实际运行的是哪一版模板。
+
+模板资产只放 `templates/*.har`；本工具、版本清单和模板变更记录统一放在 `tools/`，
+避免模板目录混入非模板文件。
 
 用法（在仓库根目录执行）：
 
@@ -34,7 +37,7 @@ if str(QD_ROOT) not in sys.path:
     sys.path.insert(0, str(QD_ROOT))
 
 TEMPLATE_DIR = QD_ROOT / "templates"
-MANIFEST_PATH = TEMPLATE_DIR / "manifest.json"
+MANIFEST_PATH = Path(__file__).resolve().parent / "template_manifest.json"
 
 # 模板版本号与项目发布版本同构：YYYYMMDD.N，同一天多次修订递增 N。
 VERSION_RE = re.compile(r"^\d{8}\.\d+$")
