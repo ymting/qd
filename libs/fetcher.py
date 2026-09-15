@@ -30,6 +30,7 @@ from libs.parse_url import parse_url
 from libs.safe_eval import safe_eval
 
 logger_fetcher = Log("QD.Http.Fetcher").getlogger()
+DIRECT_REQUEST_HEADER = "X-QD-Direct"
 if config.use_pycurl:
     try:
         import pycurl  # type: ignore
@@ -120,11 +121,20 @@ class Fetcher(object):
             url = str(url).replace("api:/", local_host, 1)
 
         impersonate = None
+        force_direct = False
         headers = {}
         for header in request["headers"]:
             if header["name"].lower() == IMPERSONATE_HEADER.lower():
                 # 内部控制头仅用于选择传输方式，禁止发送到目标站点。
                 impersonate = header["value"].strip()
+            elif header["name"].lower() == DIRECT_REQUEST_HEADER.lower():
+                # 内部服务携带凭据时强制直连，避免任务代理接触密码或浏览器令牌。
+                force_direct = str(header.get("value", "")).strip().lower() in {
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                }
             else:
                 headers[header["name"]] = header["value"]
         cookies = dict((e["name"], e["value"]) for e in request["cookies"])
@@ -192,6 +202,9 @@ class Fetcher(object):
             request_timeout=request_timeout,
         )
         setattr(req, "_qd_impersonate", impersonate)
+        # 同时保留公开语义属性和内部命名，兼容请求传输与离线测试调用方。
+        setattr(req, "force_direct", force_direct)
+        setattr(req, "_qd_force_direct", force_direct)
 
         session = cookie_utils.CookieSession()
         if req.headers.get("cookie"):
@@ -213,7 +226,8 @@ class Fetcher(object):
         if cookie_header:
             req.headers["Cookie"] = cookie_header
 
-        if proxy and pycurl:
+        # force_direct 请求禁止为 Tornado/PyCurl 设置任何代理属性。
+        if proxy and pycurl and not force_direct:
             if not config.proxy_direct_mode:
                 for key in proxy:
                     if key != "scheme":
@@ -588,12 +602,17 @@ class Fetcher(object):
                 curl_content_length=curl_content_length,
             )
             impersonate = getattr(req, "_qd_impersonate", None)
+            force_direct = bool(
+                getattr(req, "_qd_force_direct", False)
+                or getattr(req, "force_direct", False)
+            )
             use_curl_cffi = impersonate is not None
             if use_curl_cffi:
                 response = await self.curl_cffi_client.fetch(
                     req,
                     impersonate=impersonate,
-                    proxy=self._get_curl_cffi_proxy(req.url, proxy),
+                    # curl_cffi 也必须遵守内部服务的强制直连边界。
+                    proxy=None if force_direct else self._get_curl_cffi_proxy(req.url, proxy),
                     download_size_limit=self.download_size_limit,
                 )
             else:

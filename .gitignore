@@ -137,6 +137,12 @@ web/static/components/*/package-lock.json
 redis
 tmp/
 
+# 烧饼论坛浏览器运行数据（含登录态、截图和录屏等敏感内容）。
+/sb-forum-browser-data/
+**/sb-forum-browser-data/
+/sb-forum-browser-data/screenshots/
+/sb-forum-browser-data/recordings/
+
 # Logs
 logs
 *.log

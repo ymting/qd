@@ -50,6 +50,59 @@ docker compose up -d
 QD_IMAGE=ghcr.io/ymting/qd:latest docker compose up -d
 ```
 
+## 烧饼论坛签到（可选浏览器助手）
+
+模板：[烧饼论坛-签到.har](templates/烧饼论坛-签到.har)。导入模板后新建任务，按需选择 Cookie 或账号密码模式。模板变量名均为 ASCII，避免 QD 前端变量解析和保存异常。
+
+### Cookie 模式
+
+Cookie 模式不需要启动浏览器助手：
+
+1. 在浏览器中登录烧饼论坛并正常完成人机验证。
+2. 将 HAR 导入 QD，并将 `login_mode=cookie`（留空也会使用 Cookie 模式）。
+3. 将浏览器当前会话的完整 Cookie 填入 `cookie`；`username`、`password` 和 `profile_name` 留空。
+4. 先手动执行一次任务，确认签到结果后再启用定时运行。
+
+Cookie 失效时应在浏览器重新登录并更新任务变量，不要把真实 Cookie 写入 HAR、README、日志或 Git 文件。
+
+### 账号密码模式
+
+账号密码模式通过可选的 `sb-forum-browser` 服务复用独立 Chromium Profile。首次启用前先生成至少 24 个字符的随机 token，并将同一个值同时配置到宿主机环境或 QD 目录下的 `.env` 文件，以及任务变量 `browser_api_token`：
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+```dotenv
+SB_FORUM_API_TOKEN=请替换为上一步生成的随机值
+```
+
+未设置 `SB_FORUM_API_TOKEN` 时，浏览器服务应拒绝启动；Cookie 模式无需设置 token。token 只用于 QD 与浏览器助手之间的内部认证，不得提交到仓库、写入 README 或输出到日志。
+
+账号密码模式还必须运行包含本次 `libs/fetcher.py` / `X-QD-Direct` 支持的 QD Fork 构建或镜像。仓库当前 Compose 默认的旧固定镜像不含该改动，相关镜像发布前不能将它描述为已支持密码模式；Cookie 模式不受此内部直连要求影响。准备好对应镜像后，再启动 profile（token 必须已经配置）：
+
+```bash
+QD_IMAGE=your-qd-fork-image:tag docker compose --profile sb-forum up -d --build
+```
+
+该 profile 默认不会启动；不使用账号密码模式时，普通的 `docker compose up -d` 不会构建或启动浏览器助手。账号密码模式的任务变量如下：
+
+- `browser_api_token`：与 `SB_FORUM_API_TOKEN` 相同的共享密钥
+- `login_mode=password`
+- `username`：烧饼论坛用户名
+- `password`：烧饼论坛密码
+- `profile_name`：独立 Profile 名称，只使用字母、数字、连字符或下划线
+
+密码模式下 `cookie` 可以留空。首次执行会打开论坛登录页并填入账号密码，但不破解或伪造 Cap CAPTCHA。请在本机打开 `http://127.0.0.1:6081/vnc.html`，按页面提示人工完成验证码并提交登录；远程服务器请先通过 SSH 隧道转发该端口。首次交互可能超过 QD 默认的 30 秒请求超时，但浏览器助手仍会在最多 90 秒内等待；完成验证码后请手动重试任务，或等待 QD 的下一次重试。登录成功后，服务会在 `./sb-forum-browser-data` 中持久化对应 Profile，后续任务复用登录态。若登录态失效或再次要求验证码，请重新打开 noVNC 完成人工操作。
+
+浏览器助手的 `SB_FORUM_PORT=8766` 只在 Compose 内部网络提供，不映射到宿主机；noVNC 只绑定宿主机回环地址 `127.0.0.1:6081`，不要把它改为公网监听。
+
+### 签到日期与安全提示
+
+烧饼论坛按 UTC 计算签到日期，因此北京时间（UTC+8）每天 **08:00** 后才进入新的签到日。请据此安排 QD 的定时任务，重复执行当天签到会按站点结果作为幂等成功处理。
+
+浏览器 Profile、Cookie、密码、CSRF 和验证码相关数据都属于敏感信息。运行目录已加入 Git 与 Docker 构建忽略规则，但忽略规则不能清除已经被提交或备份的文件；请限制 `sb-forum-browser-data` 的文件权限，不要提交、上传或在日志中打印这些内容。论坛验证码必须由用户在真实页面中完成，项目不会提供绕过或破解验证码的功能。
+
 ## 镜像标签
 
 | 标签 | 用途 |

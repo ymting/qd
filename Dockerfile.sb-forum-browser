@@ -1,0 +1,37 @@
+# 使用官方 Playwright Python 镜像，内置与 Chromium 匹配的浏览器运行时。
+FROM mcr.microsoft.com/playwright/python:v1.52.0-noble
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    DISPLAY=:99 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    SB_FORUM_PORT=8766 \
+    NOVNC_PORT=6080 \
+    VNC_PORT=5900 \
+    NOVNC_HOME=/usr/share/novnc
+
+# Playwright 镜像已提供 Chromium 及其依赖；这里只补充虚拟显示、VNC 和 noVNC。
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        ca-certificates \
+        fluxbox \
+        novnc \
+        websockify \
+        x11vnc \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+# 服务使用 Playwright 驱动浏览器，并通过 Python 标准库 HTTP 服务提供内部接口。
+RUN python -m pip install --no-cache-dir --upgrade \
+    "playwright==1.52.0"
+
+WORKDIR /opt/sb-forum-browser
+COPY services/ /opt/sb-forum-browser/services/
+
+RUN chmod +x /opt/sb-forum-browser/services/sb_forum_browser/start.sh \
+    && mkdir -p /data/profiles /data/screenshots /data/recordings
+
+EXPOSE 8766/tcp 6080/tcp
+VOLUME ["/data"]
+
+ENTRYPOINT ["/opt/sb-forum-browser/services/sb_forum_browser/start.sh"]

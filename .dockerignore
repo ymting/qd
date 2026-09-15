@@ -34,3 +34,16 @@ env
 tmp
 redis
 node_modules
+
+# 烧饼论坛浏览器运行数据不得进入构建上下文（含 Profile、截图和录屏）。
+sb-forum-browser-data
+sb-forum-browser-data/
+**/sb-forum-browser-data
+**/sb-forum-browser-data/**
+**/screenshots
+**/screenshots/**
+**/recordings
+**/recordings/**
+*.mp4
+*.webm
+*.mkv

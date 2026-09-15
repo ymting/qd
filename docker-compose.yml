@@ -98,3 +98,28 @@ services:
     volumes:
       # - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:rw
       - ./redis/data:/data:rw
+
+  # 账号密码模式才需要启动的烧饼论坛可见浏览器助手。
+  sb-forum-browser:
+    profiles:
+      - sb-forum
+    build:
+      context: .
+      dockerfile: Dockerfile.sb-forum-browser
+    image: ${SB_FORUM_BROWSER_IMAGE:-qd-sb-forum-browser:local}
+    container_name: sb-forum-browser
+    restart: unless-stopped
+    expose:
+      - "8766"
+    ports:
+      # noVNC 仅允许宿主机本地访问；远程使用时请通过 SSH 隧道转发。
+      - "127.0.0.1:6081:6080"
+    volumes:
+      - "./sb-forum-browser-data:/data"
+    environment:
+      - TZ=Asia/Shanghai
+      - DISPLAY=:99
+      - SB_FORUM_PORT=8766
+      - SB_FORUM_API_TOKEN=${SB_FORUM_API_TOKEN:-}
+      - NOVNC_PORT=6080
+      - VNC_PORT=5900
