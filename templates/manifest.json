@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "updated": "2026-09-15",
+  "version_format": "YYYYMMDD.N（同日多次修订递增 N，与项目发布版本同构）",
+  "mirror_base": "以仓库根目录（本文件所在目录的上一级）为基准；外层工作区 templates/ 中的副本仅用于本地维护",
+  "templates": [
+    {
+      "file": "NodeSeek-可选签到模式.har",
+      "name": "NodeSeek-可选签到模式",
+      "site": "https://www.nodeseek.com",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260716.2",
+      "mirror": null,
+      "notes": "需要 ymting/qd 的 curl_cffi 指纹传输。cookie 复用登录态；sign_mode 支持 random/fixed。",
+      "sha256": "f9bf031b7762ac6867eee1a3fd7d185cadf234848a14b7a241ccbc1b7bdec46a",
+      "entries": 4,
+      "required_variables": [
+        "browser_fingerprint",
+        "browser_user_agent",
+        "cookie",
+        "sign_mode"
+      ]
+    },
+    {
+      "file": "DeepFlood-可选签到模式.har",
+      "name": "DeepFlood-可选签到模式",
+      "site": "https://www.deepflood.com",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260716.2",
+      "mirror": {
+        "path": "../templates/DeepFlood-可选签到模式-JA3.har",
+        "state": "synced"
+      },
+      "notes": "NodeSeek 同源换皮站点。重复签到返回 HTTP 500 且提示今天已完成时按幂等成功处理。",
+      "sha256": "eb07f571e68ba04f69c2409d3893eed3c32fb566b8893d74da26f908132e40a2",
+      "entries": 4,
+      "required_variables": [
+        "browser_fingerprint",
+        "browser_user_agent",
+        "cookie",
+        "sign_mode"
+      ]
+    },
+    {
+      "file": "Haokun-New-API-签到.har",
+      "name": "Haokun-New-API-签到",
+      "site": "https://api.haokun.cc",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260715.1",
+      "mirror": {
+        "path": "../templates/Haokun-New-API-签到.har",
+        "state": "synced"
+      },
+      "notes": "适配 New API v1.0.0-rc.22 的 Bearer access token 认证；Cookie 模式走 /api/user/auth/refresh，密码模式走 /api/user/login。",
+      "sha256": "b6e33efb34e283e00168f4802e3e02c7573b1f433320b582ecf54b1c53ab0402",
+      "entries": 5,
+      "required_variables": [
+        "cookie",
+        "login_mode",
+        "password",
+        "username"
+      ]
+    },
+    {
+      "file": "NovaAI-New-API-签到.har",
+      "name": "NovaAI-New-API-签到",
+      "site": "https://once-cf.novai.su",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260715.1",
+      "mirror": {
+        "path": "../templates/NovaAI-New-API-签到.har",
+        "state": "synced"
+      },
+      "notes": "同上 rc.22 认证流程；第 3 步按 checked_in_today 跳过重复 POST，避免幂等响应误报失败。",
+      "sha256": "d2a166865e5d9d817244b73692d0c3458b7ee5c8da0942c359e2b51000cf137a",
+      "entries": 5,
+      "required_variables": [
+        "cookie",
+        "login_mode",
+        "password",
+        "username"
+      ]
+    },
+    {
+      "file": "Mambo-Hachimi-签到.har",
+      "name": "Mambo-Hachimi-签到",
+      "site": "https://mambo-hachimi.biliblili.uk",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260716.2",
+      "mirror": {
+        "path": "../templates/Mambo-Hachimi-签到.har",
+        "state": "synced"
+      },
+      "notes": "签到由站点强制校验 Cloudflare Turnstile，模板只接受用户在浏览器中取得的短期 verification_token，不做验证码绕过。",
+      "sha256": "e7f095f6cea0e02aff249d50bedc10df1e27f699ae8fb00c72ba29fc8e8ebc99",
+      "entries": 4,
+      "required_variables": [
+        "browser_fingerprint",
+        "browser_user_agent",
+        "cookie",
+        "verification_token"
+      ]
+    },
+    {
+      "file": "烧饼论坛-签到.har",
+      "name": "烧饼论坛-签到",
+      "site": "https://sb.sb",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260716.2",
+      "mirror": null,
+      "notes": "cookie 与 password 双模式；非法 login_mode 在发起任何请求前失败。密码模式依赖 sb-forum-browser 助手。",
+      "sha256": "361581e3cb8c4b1598a0138a744b93e7838f4272947923699a29a3e78075e56b",
+      "entries": 12,
+      "required_variables": [
+        "browser_api_token",
+        "browser_fingerprint",
+        "browser_user_agent",
+        "cookie",
+        "login_mode",
+        "password",
+        "profile_name",
+        "username"
+      ]
+    },
+    {
+      "file": "吾爱破解-签到.har",
+      "name": "吾爱破解-签到",
+      "site": "https://www.52pojie.cn",
+      "version": "20260915.1",
+      "updated": "2026-09-15",
+      "qd_min_version": "20260716.2",
+      "mirror": null,
+      "notes": "领取奖励步骤只确认 HTTP 200 与登录有效；未取得明确成功提示时访问任务详情页复核任务真实状态，避免把「不是进行中的任务」误报为失败。",
+      "sha256": "633e994e41b3678b24467564fda5c76234a456f0db33386fd7356c38b29f62b7",
+      "entries": 28,
+      "required_variables": [
+        "browser_fingerprint",
+        "browser_user_agent",
+        "cookie"
+      ]
+    }
+  ],
+  "unmanaged": [
+    {
+      "path": "../docs/archive/NodeSeek-可选签到模式-JA3-已过期-20260915.har",
+      "reason": "上游早期副本，内容已与 qd/templates/NodeSeek-可选签到模式.har 漂移。2026-09-15 已从外层 templates/ 移出归档，仅供追溯，不要用于新建任务。"
+    },
+    {
+      "path": "../docs/archive/恩山无线论坛-新版-未纳管-20260915.har",
+      "reason": "仅存在于外层工作区、没有离线测试，且未使用 X-QD-Impersonate 指纹链路。2026-09-15 已从外层 templates/ 移出归档；如需长期维护，应先补测试再登记到本清单。"
+    }
+  ],
+  "archive_convention": "仓库外的历史模板统一归档到外层 docs/archive/，不参与校验，也不作为任务来源。"
+}
