@@ -19,13 +19,13 @@ NodeSeek HAR 浏览器指纹传输设计保存在本地工作区外层的 `docs/
 固定版本部署：
 
 ```bash
-docker pull ghcr.io/ymting/qd:20260716.2
+docker pull ghcr.io/ymting/qd:20260915.1
 docker run -d \
   --name qd \
   --restart unless-stopped \
   -p 8923:80 \
   -v "$PWD/config:/usr/src/app/config" \
-  ghcr.io/ymting/qd:20260716.2
+  ghcr.io/ymting/qd:20260915.1
 ```
 
 需要自动跟随最新正式版本时，将镜像改为：
@@ -38,7 +38,7 @@ ghcr.io/ymting/qd:latest
 
 当前 Fork 镜像只支持 64 位 x86，即 Docker 平台 `linux/amd64`。
 
-仓库自带的 Compose 配置默认使用固定版本 `20260716.2`：
+仓库自带的 Compose 配置默认使用固定版本 `20260915.1`：
 
 ```bash
 docker compose up -d
@@ -107,7 +107,7 @@ QD_IMAGE=your-qd-fork-image:tag docker compose --profile sb-forum up -d --build
 
 | 标签 | 用途 |
 | --- | --- |
-| `ghcr.io/ymting/qd:20260716.2` | 本次正式发布版本，推荐生产环境固定使用 |
+| `ghcr.io/ymting/qd:20260915.1` | 本次正式发布版本，推荐生产环境固定使用 |
 | `ghcr.io/ymting/qd:latest` | 最新正式版本，发布新版本时更新 |
 | `ghcr.io/ymting/qd:sha-<提交短哈希>` | 精确对应源码提交，便于定位和回滚 |
 

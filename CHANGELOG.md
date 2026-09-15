@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Nothing right now.
 
+## [20260915.1] - 2026.09.15 更新
+
+### Features
+
+1. 新增烧饼论坛签到模板，支持 Cookie 与账号密码两种模式；账号密码模式通过可选的 `sb-forum-browser` 浏览器助手复用独立 Chromium Profile，验证码仍需用户在真实页面中人工完成。
+2. 新增 DeepFlood（NodeSeek 同源站点）与 Mambo Hachimi 签到模板。
+3. 新增模板版本管理机制：`tools/template_manifest.json` 登记每个模板的版本号、SHA-256、条目数、必需任务变量与外层镜像状态，`tools/template_manifest.py` 提供 `--check` / `--write` / `--set-version`，并由 `tools/TEMPLATE_CHANGELOG.md` 记录模板变更。
+4. 所有模板的签到日志末尾输出版本号（如 `（模板 v20260915.1）`），据此可以判断某个任务是否仍在运行重新导入前的旧 HAR。
+
+### Fixed
+
+1. 修复吾爱破解模板第 21 步把「不是进行中的任务」一律判为失败的问题。领取奖励现在只确认 HTTP 200 与登录有效；未取得明确成功提示时改为访问任务详情页复核任务真实状态，区分「本期已完成」（按幂等成功处理）与「本轮领取未生效」（明确失败）。
+2. 吾爱破解模板的全部对外请求补充传输层失败分类（QD 合成的 0/5xx，含 curl 超时 599），失败日志给出出口网络与 `REQUEST_TIMEOUT` / `CONNECT_TIMEOUT` 的排查方向。
+3. 修复 Nova AI 模板在站点 v1.0.0-rc.22 下的认证：Cookie 模式改用 `POST /api/user/auth/refresh`，密码模式改用 `POST /api/user/login`，后续请求统一携带 `Authorization: Bearer`。
+4. 修复 `libs/safe_eval.py` 在 Python 3.13 下未放行 `TO_BOOL` 指令，导致模板里 `{% if not 变量 %}` 直接报 forbidden opcode 的问题。
+
+### Migration
+
+1. 模板文件更新不会同步到 QD 数据库。升级后需要重新导入 `templates/` 下的 HAR 并新建任务或替换旧任务；签到日志中没有出现模板版本号，即说明该任务仍在使用旧模板。
+2. 本次镜像版本 `20260915.1` 与模板版本号格式相同但彼此独立：模板版本记录在 `tools/template_manifest.json` 中，不会自动创建 Git 标签，也不会触发镜像构建。
+3. `templates/` 目录只存放 `.har` 模板资产，版本清单与工具位于 `tools/`。
+
 ## [20260716.2] - 2026.07.16 更新
 
 ### Fixed
